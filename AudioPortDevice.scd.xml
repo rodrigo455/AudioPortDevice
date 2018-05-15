@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softwarecomponent PUBLIC "-//JTRS//DTD SCA V2.2.2 SCD//EN" "softwarecomponent.dtd">
+<softwarecomponent>
+  <corbaversion>2.2</corbaversion>
+  <componentrepid repid="IDL:CF/Device:1.0"/>
+  <componenttype>device</componenttype>
+  <componentfeatures>
+    <supportsinterface repid="IDL:CF/Device:1.0" supportsname="Device"/>
+    <supportsinterface repid="IDL:CF/Resource:1.0" supportsname="Resource"/>
+    <supportsinterface repid="IDL:CF/LifeCycle:1.0" supportsname="LifeCycle"/>
+    <supportsinterface repid="IDL:CF/TestableObject:1.0" supportsname="TestableObject"/>
+    <supportsinterface repid="IDL:CF/PropertyEmitter:1.0" supportsname="PropertyEmitter"/>
+    <supportsinterface repid="IDL:CF/PropertySet:1.0" supportsname="PropertySet"/>
+    <supportsinterface repid="IDL:CF/PortSet:1.0" supportsname="PortSet"/>
+    <supportsinterface repid="IDL:CF/PortSupplier:1.0" supportsname="PortSupplier"/>
+    <supportsinterface repid="IDL:CF/Logging:1.0" supportsname="Logging"/>
+    <supportsinterface repid="IDL:CF/LogEventConsumer:1.0" supportsname="LogEventConsumer"/>
+    <supportsinterface repid="IDL:CF/LogConfiguration:1.0" supportsname="LogConfiguration"/>
+    <ports>
+      <uses repid="IDL:Audio/AudioPTT_Signal:1.0" usesname="audio_ptt_uses_port">
+        <description>Is used to by the Audio Port Device to notify the Device User of PTT signal.</description>
+      </uses>
+      <provides repid="IDL:Audio/AudibleAlertsAndAlarms:1.0" providesname="audio_alertalarm_wf_provides_port">
+        <description>Is provided by the Audio Port Device to control the alert and alarm tones by waveform.</description>
+        <porttype type="control"/>
+      </provides>
+      <provides repid="IDL:Packet/PayloadControl:1.0" providesname="audio_sample_stream_ctrl_provides_port">
+        <description>Is provided by the Audio Port Device to set the payload size by the Device User.</description>
+        <porttype type="control"/>
+      </provides>
+      <provides repid="IDL:Packet/UshortStream:1.0" providesname="audio_sample_stream_provides_port">
+        <description>Is provided by the Audio Port Device to consume packets through the pushPacket operation.</description>
+        <porttype type="data"/>
+      </provides>
+      <uses repid="IDL:Packet/PayloadControl:1.0" usesname="audio_sample_stream_ctrl_uses_port">
+        <description>Is used by the Audio Port Device to push packets to the Device User.</description>
+        <porttype type="control"/>
+      </uses>
+      <uses repid="IDL:Packet/UshortStream:1.0" usesname="audio_sample_stream_uses_port">
+        <description>is used by the Audio Port Device to set the payload size of the
+incoming packets from the Device User.</description>
+        <porttype type="data"/>
+      </uses>
+      <provides repid="IDL:DevMsgCtl/DeviceMessageControl:1.0" providesname="audio_sample_msg_ctrl_provides_port">
+        <description>Is provided by the Audio Port Device to manage the message flows.</description>
+        <porttype type="control"/>
+      </provides>
+    </ports>
+  </componentfeatures>
+  <interfaces>
+    <interface name="Device" repid="IDL:CF/Device:1.0">
+      <inheritsinterface repid="IDL:CF/Resource:1.0"/>
+    </interface>
+    <interface name="Resource" repid="IDL:CF/Resource:1.0">
+      <inheritsinterface repid="IDL:CF/LifeCycle:1.0"/>
+      <inheritsinterface repid="IDL:CF/TestableObject:1.0"/>
+      <inheritsinterface repid="IDL:CF/PropertyEmitter:1.0"/>
+      <inheritsinterface repid="IDL:CF/PortSet:1.0"/>
+      <inheritsinterface repid="IDL:CF/Logging:1.0"/>
+    </interface>
+    <interface name="LifeCycle" repid="IDL:CF/LifeCycle:1.0"/>
+    <interface name="TestableObject" repid="IDL:CF/TestableObject:1.0"/>
+    <interface name="PropertyEmitter" repid="IDL:CF/PropertyEmitter:1.0">
+      <inheritsinterface repid="IDL:CF/PropertySet:1.0"/>
+    </interface>
+    <interface name="PropertySet" repid="IDL:CF/PropertySet:1.0"/>
+    <interface name="PortSet" repid="IDL:CF/PortSet:1.0">
+      <inheritsinterface repid="IDL:CF/PortSupplier:1.0"/>
+    </interface>
+    <interface name="PortSupplier" repid="IDL:CF/PortSupplier:1.0"/>
+    <interface name="Logging" repid="IDL:CF/Logging:1.0">
+      <inheritsinterface repid="IDL:CF/LogEventConsumer:1.0"/>
+      <inheritsinterface repid="IDL:CF/LogConfiguration:1.0"/>
+    </interface>
+    <interface name="LogEventConsumer" repid="IDL:CF/LogEventConsumer:1.0"/>
+    <interface name="LogConfiguration" repid="IDL:CF/LogConfiguration:1.0"/>
+    <interface name="AudioPTT_Signal" repid="IDL:Audio/AudioPTT_Signal:1.0"/>
+    <interface name="AudibleAlertsAndAlarms" repid="IDL:Audio/AudibleAlertsAndAlarms:1.0"/>
+    <interface name="PayloadControl" repid="IDL:Packet/PayloadControl:1.0"/>
+    <interface name="UshortStream" repid="IDL:Packet/UshortStream:1.0">
+      <inheritsinterface repid="IDL:Packet/PayloadStatus:1.0"/>
+    </interface>
+    <interface name="PayloadStatus" repid="IDL:Packet/PayloadStatus:1.0"/>
+    <interface name="DeviceMessageControl" repid="IDL:DevMsgCtl/DeviceMessageControl:1.0"/>
+  </interfaces>
+</softwarecomponent>

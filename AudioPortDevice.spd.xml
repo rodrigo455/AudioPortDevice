@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE softpkg PUBLIC "-//JTRS//DTD SCA V2.2.2 SPD//EN" "softpkg.dtd">
+<softpkg id="DCE:c18039d1-aec3-4acd-a17a-07ff6ea69a35" name="AudioPortDevice" type="2.1.2" version="1.3.4">
+  <title>Audio Port Device</title>
+  <author>
+    <name>null</name>
+  </author>
+  <description>The Audio Port Device provides the control of alert and alarm tones, notification of a Push-to-Talk signal and Audio Stream Interfaces</description>
+  <propertyfile type="PRF">
+    <localfile name="AudioPortDevice.prf.xml"/>
+  </propertyfile>
+  <descriptor>
+    <localfile name="AudioPortDevice.scd.xml"/>
+  </descriptor>
+  <implementation id="cpp">
+    <code type="Executable">
+      <localfile name="cpp/AudioPortDevice"/>
+      <entrypoint>cpp/AudioPortDevice</entrypoint>
+    </code>
+    <compiler name="/usr/bin/gcc" version="4.4.7"/>
+    <programminglanguage name="C++"/>
+    <humanlanguage name="EN"/>
+    <os name="Linux"/>
+    <processor name="x86"/>
+    <processor name="x86_64"/>
+  </implementation>
+</softpkg>

@@ -1,0 +1,298 @@
+#ifndef PORT_H
+#define PORT_H
+
+#include <boost/thread/locks.hpp>
+#include <ossie/Port_impl.h>
+#include <ossie/debug.h>
+#include <JTRS/Audio.h>
+#include <JTRS/Packet.h>
+#include <JTRS/DeviceMessageControl.h>
+#include <vector>
+#include <utility>
+#include <ossie/CF/QueryablePort.h>
+
+class AudioPortDevice_base;
+class AudioPortDevice_i;
+
+#define CORBA_MAX_TRANSFER_BYTES omniORB::giopMaxMsgSize()
+
+// ----------------------------------------------------------------------------------------
+// Audio_AudibleAlertsAndAlarms_In_i declaration
+// ----------------------------------------------------------------------------------------
+class Audio_AudibleAlertsAndAlarms_In_i : public POA_Audio::AudibleAlertsAndAlarms, public Port_Provides_base_impl
+{
+    public:
+        Audio_AudibleAlertsAndAlarms_In_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Audio_AudibleAlertsAndAlarms_In_i();
+
+        CORBA::UShort createTone(const Audio::AudibleAlertsAndAlarms::ToneProfileType& toneProfile);
+        void startTone(CORBA::UShort toneId);
+        void stopTone(CORBA::UShort toneId);
+        void destroyTone(CORBA::UShort toneId);
+        void stopAllTones();
+        std::string getRepid() const;
+
+    protected:
+        AudioPortDevice_i *parent;
+        boost::mutex portAccess;
+};
+// ----------------------------------------------------------------------------------------
+// Packet_PayloadControl_In_i declaration
+// ----------------------------------------------------------------------------------------
+class Packet_PayloadControl_In_i : public POA_Packet::PayloadControl, public Port_Provides_base_impl
+{
+    public:
+        Packet_PayloadControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Packet_PayloadControl_In_i();
+
+        void setMaxPayloadSize(CORBA::ULong maxPayloadSize);
+        void setMinPayloadSize(CORBA::ULong minPayloadSize);
+        void setDesiredPayloadSize(CORBA::ULong desiredPayloadSize);
+        void setMinOverrideTimeout(CORBA::ULong minOverrideTimeout);
+        std::string getRepid() const;
+
+    protected:
+        AudioPortDevice_i *parent;
+        boost::mutex portAccess;
+};
+// ----------------------------------------------------------------------------------------
+// Packet_UshortStream_In_i declaration
+// ----------------------------------------------------------------------------------------
+class Packet_UshortStream_In_i : public POA_Packet::UshortStream, public Port_Provides_base_impl
+{
+    public:
+        Packet_UshortStream_In_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Packet_UshortStream_In_i();
+
+        CORBA::ULong getMaxPayloadSize();
+        CORBA::ULong getMinPayloadSize();
+        CORBA::ULong getDesiredPayloadSize();
+        CORBA::ULong getMinOverrideTimeout();
+        void pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload);
+        std::string getRepid() const;
+
+    protected:
+        AudioPortDevice_i *parent;
+        boost::mutex portAccess;
+};
+// ----------------------------------------------------------------------------------------
+// DevMsgCtl_DeviceMessageControl_In_i declaration
+// ----------------------------------------------------------------------------------------
+class DevMsgCtl_DeviceMessageControl_In_i : public POA_DevMsgCtl::DeviceMessageControl, public Port_Provides_base_impl
+{
+    public:
+        DevMsgCtl_DeviceMessageControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~DevMsgCtl_DeviceMessageControl_In_i();
+
+        CORBA::Boolean rxActive();
+        CORBA::Boolean txActive();
+        void abortTx(CORBA::UShort streamId);
+        std::string getRepid() const;
+
+    protected:
+        AudioPortDevice_i *parent;
+        boost::mutex portAccess;
+};
+// ----------------------------------------------------------------------------------------
+// Audio_AudioPTT_Signal_Out_i declaration
+// ----------------------------------------------------------------------------------------
+class Audio_AudioPTT_Signal_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
+{
+    ENABLE_LOGGING
+    public:
+        Audio_AudioPTT_Signal_Out_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Audio_AudioPTT_Signal_Out_i();
+
+        void setPTT(CORBA::Boolean PTT);
+
+        ExtendedCF::UsesConnectionSequence * connections() 
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            if (recConnectionsRefresh) {
+                recConnections.length(outConnections.size());
+                for (unsigned int i = 0; i < outConnections.size(); i++) {
+                    recConnections[i].connectionId = CORBA::string_dup(outConnections[i].second.c_str());
+                    recConnections[i].port = CORBA::Object::_duplicate(outConnections[i].first);
+                }
+                recConnectionsRefresh = false;
+            }
+            // NOTE: You must delete the object that this function returns!
+            return new ExtendedCF::UsesConnectionSequence(recConnections);
+        }
+
+        void connectPort(CORBA::Object_ptr connection, const char* connectionId)
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            Audio::AudioPTT_Signal_var port = Audio::AudioPTT_Signal::_narrow(connection);
+            outConnections.push_back(std::make_pair(port, connectionId));
+            active = true;
+            recConnectionsRefresh = true;
+        }
+
+        void disconnectPort(const char* connectionId)
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            for (unsigned int i = 0; i < outConnections.size(); i++) {
+                if (outConnections[i].second == connectionId) {
+                    outConnections.erase(outConnections.begin() + i);
+                    break;
+                }
+            }
+
+            if (outConnections.size() == 0) {
+                active = false;
+            }
+            recConnectionsRefresh = true;
+        }
+
+        std::string getRepid () const;
+
+        std::vector< std::pair<Audio::AudioPTT_Signal_var, std::string> > _getConnections()
+        {
+            return outConnections;
+        }
+
+    protected:
+        AudioPortDevice_i *parent;
+        std::vector < std::pair<Audio::AudioPTT_Signal_var, std::string> > outConnections;
+        ExtendedCF::UsesConnectionSequence recConnections;
+        bool recConnectionsRefresh;
+};
+// ----------------------------------------------------------------------------------------
+// Packet_PayloadControl_Out_i declaration
+// ----------------------------------------------------------------------------------------
+class Packet_PayloadControl_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
+{
+    ENABLE_LOGGING
+    public:
+        Packet_PayloadControl_Out_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Packet_PayloadControl_Out_i();
+
+        void setMaxPayloadSize(CORBA::ULong maxPayloadSize);
+        void setMinPayloadSize(CORBA::ULong minPayloadSize);
+        void setDesiredPayloadSize(CORBA::ULong desiredPayloadSize);
+        void setMinOverrideTimeout(CORBA::ULong minOverrideTimeout);
+
+        ExtendedCF::UsesConnectionSequence * connections() 
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            if (recConnectionsRefresh) {
+                recConnections.length(outConnections.size());
+                for (unsigned int i = 0; i < outConnections.size(); i++) {
+                    recConnections[i].connectionId = CORBA::string_dup(outConnections[i].second.c_str());
+                    recConnections[i].port = CORBA::Object::_duplicate(outConnections[i].first);
+                }
+                recConnectionsRefresh = false;
+            }
+            // NOTE: You must delete the object that this function returns!
+            return new ExtendedCF::UsesConnectionSequence(recConnections);
+        }
+
+        void connectPort(CORBA::Object_ptr connection, const char* connectionId)
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            Packet::PayloadControl_var port = Packet::PayloadControl::_narrow(connection);
+            outConnections.push_back(std::make_pair(port, connectionId));
+            active = true;
+            recConnectionsRefresh = true;
+        }
+
+        void disconnectPort(const char* connectionId)
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            for (unsigned int i = 0; i < outConnections.size(); i++) {
+                if (outConnections[i].second == connectionId) {
+                    outConnections.erase(outConnections.begin() + i);
+                    break;
+                }
+            }
+
+            if (outConnections.size() == 0) {
+                active = false;
+            }
+            recConnectionsRefresh = true;
+        }
+
+        std::string getRepid () const;
+
+        std::vector< std::pair<Packet::PayloadControl_var, std::string> > _getConnections()
+        {
+            return outConnections;
+        }
+
+    protected:
+        AudioPortDevice_i *parent;
+        std::vector < std::pair<Packet::PayloadControl_var, std::string> > outConnections;
+        ExtendedCF::UsesConnectionSequence recConnections;
+        bool recConnectionsRefresh;
+};
+// ----------------------------------------------------------------------------------------
+// Packet_UshortStream_Out_i declaration
+// ----------------------------------------------------------------------------------------
+class Packet_UshortStream_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
+{
+    ENABLE_LOGGING
+    public:
+        Packet_UshortStream_Out_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Packet_UshortStream_Out_i();
+
+        CORBA::ULong getMaxPayloadSize();
+        CORBA::ULong getMinPayloadSize();
+        CORBA::ULong getDesiredPayloadSize();
+        CORBA::ULong getMinOverrideTimeout();
+        void pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload);
+
+        ExtendedCF::UsesConnectionSequence * connections() 
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            if (recConnectionsRefresh) {
+                recConnections.length(outConnections.size());
+                for (unsigned int i = 0; i < outConnections.size(); i++) {
+                    recConnections[i].connectionId = CORBA::string_dup(outConnections[i].second.c_str());
+                    recConnections[i].port = CORBA::Object::_duplicate(outConnections[i].first);
+                }
+                recConnectionsRefresh = false;
+            }
+            // NOTE: You must delete the object that this function returns!
+            return new ExtendedCF::UsesConnectionSequence(recConnections);
+        }
+
+        void connectPort(CORBA::Object_ptr connection, const char* connectionId)
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            Packet::UshortStream_var port = Packet::UshortStream::_narrow(connection);
+            outConnections.push_back(std::make_pair(port, connectionId));
+            active = true;
+            recConnectionsRefresh = true;
+        }
+
+        void disconnectPort(const char* connectionId)
+        {
+            boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
+            for (unsigned int i = 0; i < outConnections.size(); i++) {
+                if (outConnections[i].second == connectionId) {
+                    outConnections.erase(outConnections.begin() + i);
+                    break;
+                }
+            }
+
+            if (outConnections.size() == 0) {
+                active = false;
+            }
+            recConnectionsRefresh = true;
+        }
+
+        std::string getRepid () const;
+
+        std::vector< std::pair<Packet::UshortStream_var, std::string> > _getConnections()
+        {
+            return outConnections;
+        }
+
+    protected:
+        AudioPortDevice_i *parent;
+        std::vector < std::pair<Packet::UshortStream_var, std::string> > outConnections;
+        ExtendedCF::UsesConnectionSequence recConnections;
+        bool recConnectionsRefresh;
+};
+#endif // PORT_H
