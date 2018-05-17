@@ -188,6 +188,7 @@ void AudioPortDevice_i::updateUsageState()
         this->setAllocationImpl(my_alloc, this, &AudioPortDevice_i::my_alloc_fn, &AudioPortDevice_i::my_dealloc_fn);
         
 
+
 ************************************************************************************************/
 int AudioPortDevice_i::serviceFunction()
 {

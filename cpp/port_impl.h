@@ -4,9 +4,9 @@
 #include <boost/thread/locks.hpp>
 #include <ossie/Port_impl.h>
 #include <ossie/debug.h>
-#include <JTRS/Audio.h>
-#include <JTRS/Packet.h>
-#include <JTRS/DeviceMessageControl.h>
+#include <AUDIO/Audio.h>
+#include <PACKET/Packet.h>
+#include <DEVMSGCTL/DeviceMessageControl.h>
 #include <vector>
 #include <utility>
 #include <ossie/CF/QueryablePort.h>
