@@ -58,60 +58,60 @@ std::string Audio_AudibleAlertsAndAlarms_In_i::getRepid() const
     return Audio::AudibleAlertsAndAlarms::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
-// Packet_PayloadControl_In_i definition
+// Audio_SampleStreamControl_In_i definition
 // ----------------------------------------------------------------------------------------
-Packet_PayloadControl_In_i::Packet_PayloadControl_In_i(std::string port_name, AudioPortDevice_base *_parent) : 
+Audio_SampleStreamControl_In_i::Audio_SampleStreamControl_In_i(std::string port_name, AudioPortDevice_base *_parent) : 
 Port_Provides_base_impl(port_name)
 {
     parent = static_cast<AudioPortDevice_i *> (_parent);
 }
 
-Packet_PayloadControl_In_i::~Packet_PayloadControl_In_i()
+Audio_SampleStreamControl_In_i::~Audio_SampleStreamControl_In_i()
 {
 }
 
-void Packet_PayloadControl_In_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
+void Audio_SampleStreamControl_In_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
 {
     boost::mutex::scoped_lock lock(portAccess);
     // TODO: Fill in this function
 }
 
-void Packet_PayloadControl_In_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
+void Audio_SampleStreamControl_In_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
 {
     boost::mutex::scoped_lock lock(portAccess);
     // TODO: Fill in this function
 }
 
-void Packet_PayloadControl_In_i::setDesiredPayloadSize(CORBA::ULong desiredPayloadSize)
+void Audio_SampleStreamControl_In_i::setDesiredPayloadSize(CORBA::ULong desiredPayloadSize)
 {
     boost::mutex::scoped_lock lock(portAccess);
     // TODO: Fill in this function
 }
 
-void Packet_PayloadControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverrideTimeout)
+void Audio_SampleStreamControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverrideTimeout)
 {
     boost::mutex::scoped_lock lock(portAccess);
     // TODO: Fill in this function
 }
 
-std::string Packet_PayloadControl_In_i::getRepid() const
+std::string Audio_SampleStreamControl_In_i::getRepid() const
 {
-    return Packet::PayloadControl::_PD_repoId;
+    return Audio::SampleStreamControl::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
-// Packet_UshortStream_In_i definition
+// Audio_SampleStream_In_i definition
 // ----------------------------------------------------------------------------------------
-Packet_UshortStream_In_i::Packet_UshortStream_In_i(std::string port_name, AudioPortDevice_base *_parent) : 
+Audio_SampleStream_In_i::Audio_SampleStream_In_i(std::string port_name, AudioPortDevice_base *_parent) : 
 Port_Provides_base_impl(port_name)
 {
     parent = static_cast<AudioPortDevice_i *> (_parent);
 }
 
-Packet_UshortStream_In_i::~Packet_UshortStream_In_i()
+Audio_SampleStream_In_i::~Audio_SampleStream_In_i()
 {
 }
 
-CORBA::ULong Packet_UshortStream_In_i::getMaxPayloadSize()
+CORBA::ULong Audio_SampleStream_In_i::getMaxPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
@@ -119,7 +119,7 @@ CORBA::ULong Packet_UshortStream_In_i::getMaxPayloadSize()
     return retval;
 }
 
-CORBA::ULong Packet_UshortStream_In_i::getMinPayloadSize()
+CORBA::ULong Audio_SampleStream_In_i::getMinPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
@@ -127,7 +127,7 @@ CORBA::ULong Packet_UshortStream_In_i::getMinPayloadSize()
     return retval;
 }
 
-CORBA::ULong Packet_UshortStream_In_i::getDesiredPayloadSize()
+CORBA::ULong Audio_SampleStream_In_i::getDesiredPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
@@ -135,7 +135,7 @@ CORBA::ULong Packet_UshortStream_In_i::getDesiredPayloadSize()
     return retval;
 }
 
-CORBA::ULong Packet_UshortStream_In_i::getMinOverrideTimeout()
+CORBA::ULong Audio_SampleStream_In_i::getMinOverrideTimeout()
 {
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
@@ -143,30 +143,30 @@ CORBA::ULong Packet_UshortStream_In_i::getMinOverrideTimeout()
     return retval;
 }
 
-void Packet_UshortStream_In_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
+void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
 {
     boost::mutex::scoped_lock lock(portAccess);
     // TODO: Fill in this function
 }
 
-std::string Packet_UshortStream_In_i::getRepid() const
+std::string Audio_SampleStream_In_i::getRepid() const
 {
-    return Packet::UshortStream::_PD_repoId;
+    return Audio::SampleStream::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
-// DevMsgCtl_DeviceMessageControl_In_i definition
+// Audio_SampleMessageControl_In_i definition
 // ----------------------------------------------------------------------------------------
-DevMsgCtl_DeviceMessageControl_In_i::DevMsgCtl_DeviceMessageControl_In_i(std::string port_name, AudioPortDevice_base *_parent) : 
+Audio_SampleMessageControl_In_i::Audio_SampleMessageControl_In_i(std::string port_name, AudioPortDevice_base *_parent) : 
 Port_Provides_base_impl(port_name)
 {
     parent = static_cast<AudioPortDevice_i *> (_parent);
 }
 
-DevMsgCtl_DeviceMessageControl_In_i::~DevMsgCtl_DeviceMessageControl_In_i()
+Audio_SampleMessageControl_In_i::~Audio_SampleMessageControl_In_i()
 {
 }
 
-CORBA::Boolean DevMsgCtl_DeviceMessageControl_In_i::rxActive()
+CORBA::Boolean Audio_SampleMessageControl_In_i::rxActive()
 {
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::Boolean retval = 0;
@@ -174,7 +174,7 @@ CORBA::Boolean DevMsgCtl_DeviceMessageControl_In_i::rxActive()
     return retval;
 }
 
-CORBA::Boolean DevMsgCtl_DeviceMessageControl_In_i::txActive()
+CORBA::Boolean Audio_SampleMessageControl_In_i::txActive()
 {
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::Boolean retval = 0;
@@ -182,15 +182,15 @@ CORBA::Boolean DevMsgCtl_DeviceMessageControl_In_i::txActive()
     return retval;
 }
 
-void DevMsgCtl_DeviceMessageControl_In_i::abortTx(CORBA::UShort streamId)
+void Audio_SampleMessageControl_In_i::abortTx(CORBA::UShort streamId)
 {
     boost::mutex::scoped_lock lock(portAccess);
     // TODO: Fill in this function
 }
 
-std::string DevMsgCtl_DeviceMessageControl_In_i::getRepid() const
+std::string Audio_SampleMessageControl_In_i::getRepid() const
 {
-    return DevMsgCtl::DeviceMessageControl::_PD_repoId;
+    return Audio::SampleMessageControl::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
 // Audio_AudioPTT_Signal_Out_i definition
@@ -232,10 +232,10 @@ std::string Audio_AudioPTT_Signal_Out_i::getRepid() const
     return Audio::AudioPTT_Signal::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
-// Packet_PayloadControl_Out_i definition
+// Audio_SampleStreamControl_Out_i definition
 // ----------------------------------------------------------------------------------------
-PREPARE_ALT_LOGGING(Packet_PayloadControl_Out_i,AudioPortDevice_i)
-Packet_PayloadControl_Out_i::Packet_PayloadControl_Out_i(std::string port_name, AudioPortDevice_base *_parent) :
+PREPARE_ALT_LOGGING(Audio_SampleStreamControl_Out_i,AudioPortDevice_i)
+Audio_SampleStreamControl_Out_i::Audio_SampleStreamControl_Out_i(std::string port_name, AudioPortDevice_base *_parent) :
 Port_Uses_base_impl(port_name)
 {
     parent = static_cast<AudioPortDevice_i *> (_parent);
@@ -243,13 +243,13 @@ Port_Uses_base_impl(port_name)
     recConnections.length(0);
 }
 
-Packet_PayloadControl_Out_i::~Packet_PayloadControl_Out_i()
+Audio_SampleStreamControl_Out_i::~Audio_SampleStreamControl_Out_i()
 {
 }
 
-void Packet_PayloadControl_Out_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
+void Audio_SampleStreamControl_Out_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
 {
-    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -258,7 +258,7 @@ void Packet_PayloadControl_Out_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
             try {
                 ((*i).first)->setMaxPayloadSize(maxPayloadSize);
             } catch(...) {
-                LOG_ERROR(Packet_PayloadControl_Out_i,"Call to setMaxPayloadSize by Packet_PayloadControl_Out_i failed");
+                LOG_ERROR(Audio_SampleStreamControl_Out_i,"Call to setMaxPayloadSize by Audio_SampleStreamControl_Out_i failed");
                 throw;
             }
         }
@@ -266,9 +266,9 @@ void Packet_PayloadControl_Out_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
 
 }
 
-void Packet_PayloadControl_Out_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
+void Audio_SampleStreamControl_Out_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
 {
-    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -277,7 +277,7 @@ void Packet_PayloadControl_Out_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
             try {
                 ((*i).first)->setMinPayloadSize(minPayloadSize);
             } catch(...) {
-                LOG_ERROR(Packet_PayloadControl_Out_i,"Call to setMinPayloadSize by Packet_PayloadControl_Out_i failed");
+                LOG_ERROR(Audio_SampleStreamControl_Out_i,"Call to setMinPayloadSize by Audio_SampleStreamControl_Out_i failed");
                 throw;
             }
         }
@@ -285,9 +285,9 @@ void Packet_PayloadControl_Out_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
 
 }
 
-void Packet_PayloadControl_Out_i::setDesiredPayloadSize(CORBA::ULong desiredPayloadSize)
+void Audio_SampleStreamControl_Out_i::setDesiredPayloadSize(CORBA::ULong desiredPayloadSize)
 {
-    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -296,7 +296,7 @@ void Packet_PayloadControl_Out_i::setDesiredPayloadSize(CORBA::ULong desiredPayl
             try {
                 ((*i).first)->setDesiredPayloadSize(desiredPayloadSize);
             } catch(...) {
-                LOG_ERROR(Packet_PayloadControl_Out_i,"Call to setDesiredPayloadSize by Packet_PayloadControl_Out_i failed");
+                LOG_ERROR(Audio_SampleStreamControl_Out_i,"Call to setDesiredPayloadSize by Audio_SampleStreamControl_Out_i failed");
                 throw;
             }
         }
@@ -304,9 +304,9 @@ void Packet_PayloadControl_Out_i::setDesiredPayloadSize(CORBA::ULong desiredPayl
 
 }
 
-void Packet_PayloadControl_Out_i::setMinOverrideTimeout(CORBA::ULong minOverrideTimeout)
+void Audio_SampleStreamControl_Out_i::setMinOverrideTimeout(CORBA::ULong minOverrideTimeout)
 {
-    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -315,7 +315,7 @@ void Packet_PayloadControl_Out_i::setMinOverrideTimeout(CORBA::ULong minOverride
             try {
                 ((*i).first)->setMinOverrideTimeout(minOverrideTimeout);
             } catch(...) {
-                LOG_ERROR(Packet_PayloadControl_Out_i,"Call to setMinOverrideTimeout by Packet_PayloadControl_Out_i failed");
+                LOG_ERROR(Audio_SampleStreamControl_Out_i,"Call to setMinOverrideTimeout by Audio_SampleStreamControl_Out_i failed");
                 throw;
             }
         }
@@ -323,15 +323,15 @@ void Packet_PayloadControl_Out_i::setMinOverrideTimeout(CORBA::ULong minOverride
 
 }
 
-std::string Packet_PayloadControl_Out_i::getRepid() const
+std::string Audio_SampleStreamControl_Out_i::getRepid() const
 {
-    return Packet::PayloadControl::_PD_repoId;
+    return Audio::SampleStreamControl::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
-// Packet_UshortStream_Out_i definition
+// Audio_SampleStream_Out_i definition
 // ----------------------------------------------------------------------------------------
-PREPARE_ALT_LOGGING(Packet_UshortStream_Out_i,AudioPortDevice_i)
-Packet_UshortStream_Out_i::Packet_UshortStream_Out_i(std::string port_name, AudioPortDevice_base *_parent) :
+PREPARE_ALT_LOGGING(Audio_SampleStream_Out_i,AudioPortDevice_i)
+Audio_SampleStream_Out_i::Audio_SampleStream_Out_i(std::string port_name, AudioPortDevice_base *_parent) :
 Port_Uses_base_impl(port_name)
 {
     parent = static_cast<AudioPortDevice_i *> (_parent);
@@ -339,14 +339,14 @@ Port_Uses_base_impl(port_name)
     recConnections.length(0);
 }
 
-Packet_UshortStream_Out_i::~Packet_UshortStream_Out_i()
+Audio_SampleStream_Out_i::~Audio_SampleStream_Out_i()
 {
 }
 
-CORBA::ULong Packet_UshortStream_Out_i::getMaxPayloadSize()
+CORBA::ULong Audio_SampleStream_Out_i::getMaxPayloadSize()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -355,7 +355,7 @@ CORBA::ULong Packet_UshortStream_Out_i::getMaxPayloadSize()
             try {
                 retval = ((*i).first)->getMaxPayloadSize();
             } catch(...) {
-                LOG_ERROR(Packet_UshortStream_Out_i,"Call to getMaxPayloadSize by Packet_UshortStream_Out_i failed");
+                LOG_ERROR(Audio_SampleStream_Out_i,"Call to getMaxPayloadSize by Audio_SampleStream_Out_i failed");
                 throw;
             }
         }
@@ -364,10 +364,10 @@ CORBA::ULong Packet_UshortStream_Out_i::getMaxPayloadSize()
     return retval;
 }
 
-CORBA::ULong Packet_UshortStream_Out_i::getMinPayloadSize()
+CORBA::ULong Audio_SampleStream_Out_i::getMinPayloadSize()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -376,7 +376,7 @@ CORBA::ULong Packet_UshortStream_Out_i::getMinPayloadSize()
             try {
                 retval = ((*i).first)->getMinPayloadSize();
             } catch(...) {
-                LOG_ERROR(Packet_UshortStream_Out_i,"Call to getMinPayloadSize by Packet_UshortStream_Out_i failed");
+                LOG_ERROR(Audio_SampleStream_Out_i,"Call to getMinPayloadSize by Audio_SampleStream_Out_i failed");
                 throw;
             }
         }
@@ -385,10 +385,10 @@ CORBA::ULong Packet_UshortStream_Out_i::getMinPayloadSize()
     return retval;
 }
 
-CORBA::ULong Packet_UshortStream_Out_i::getDesiredPayloadSize()
+CORBA::ULong Audio_SampleStream_Out_i::getDesiredPayloadSize()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -397,7 +397,7 @@ CORBA::ULong Packet_UshortStream_Out_i::getDesiredPayloadSize()
             try {
                 retval = ((*i).first)->getDesiredPayloadSize();
             } catch(...) {
-                LOG_ERROR(Packet_UshortStream_Out_i,"Call to getDesiredPayloadSize by Packet_UshortStream_Out_i failed");
+                LOG_ERROR(Audio_SampleStream_Out_i,"Call to getDesiredPayloadSize by Audio_SampleStream_Out_i failed");
                 throw;
             }
         }
@@ -406,10 +406,10 @@ CORBA::ULong Packet_UshortStream_Out_i::getDesiredPayloadSize()
     return retval;
 }
 
-CORBA::ULong Packet_UshortStream_Out_i::getMinOverrideTimeout()
+CORBA::ULong Audio_SampleStream_Out_i::getMinOverrideTimeout()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -418,7 +418,7 @@ CORBA::ULong Packet_UshortStream_Out_i::getMinOverrideTimeout()
             try {
                 retval = ((*i).first)->getMinOverrideTimeout();
             } catch(...) {
-                LOG_ERROR(Packet_UshortStream_Out_i,"Call to getMinOverrideTimeout by Packet_UshortStream_Out_i failed");
+                LOG_ERROR(Audio_SampleStream_Out_i,"Call to getMinOverrideTimeout by Audio_SampleStream_Out_i failed");
                 throw;
             }
         }
@@ -427,9 +427,9 @@ CORBA::ULong Packet_UshortStream_Out_i::getMinOverrideTimeout()
     return retval;
 }
 
-void Packet_UshortStream_Out_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
+void Audio_SampleStream_Out_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
 {
-    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -438,7 +438,7 @@ void Packet_UshortStream_Out_i::pushPacket(const Packet::StreamControlType& cont
             try {
                 ((*i).first)->pushPacket(control, payload);
             } catch(...) {
-                LOG_ERROR(Packet_UshortStream_Out_i,"Call to pushPacket by Packet_UshortStream_Out_i failed");
+                LOG_ERROR(Audio_SampleStream_Out_i,"Call to pushPacket by Audio_SampleStream_Out_i failed");
                 throw;
             }
         }
@@ -446,8 +446,8 @@ void Packet_UshortStream_Out_i::pushPacket(const Packet::StreamControlType& cont
 
 }
 
-std::string Packet_UshortStream_Out_i::getRepid() const
+std::string Audio_SampleStream_Out_i::getRepid() const
 {
-    return Packet::UshortStream::_PD_repoId;
+    return Audio::SampleStream::_PD_repoId;
 }
 

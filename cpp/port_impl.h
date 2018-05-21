@@ -5,8 +5,7 @@
 #include <ossie/Port_impl.h>
 #include <ossie/debug.h>
 #include <AUDIO/Audio.h>
-#include <PACKET/Packet.h>
-#include <DEVMSGCTL/DeviceMessageControl.h>
+#include <AUDIO/AudioSampleStreamExt.h>
 #include <vector>
 #include <utility>
 #include <ossie/CF/QueryablePort.h>
@@ -37,13 +36,13 @@ class Audio_AudibleAlertsAndAlarms_In_i : public POA_Audio::AudibleAlertsAndAlar
         boost::mutex portAccess;
 };
 // ----------------------------------------------------------------------------------------
-// Packet_PayloadControl_In_i declaration
+// Audio_SampleStreamControl_In_i declaration
 // ----------------------------------------------------------------------------------------
-class Packet_PayloadControl_In_i : public POA_Packet::PayloadControl, public Port_Provides_base_impl
+class Audio_SampleStreamControl_In_i : public POA_Audio::SampleStreamControl, public Port_Provides_base_impl
 {
     public:
-        Packet_PayloadControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
-        ~Packet_PayloadControl_In_i();
+        Audio_SampleStreamControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Audio_SampleStreamControl_In_i();
 
         void setMaxPayloadSize(CORBA::ULong maxPayloadSize);
         void setMinPayloadSize(CORBA::ULong minPayloadSize);
@@ -56,13 +55,13 @@ class Packet_PayloadControl_In_i : public POA_Packet::PayloadControl, public Por
         boost::mutex portAccess;
 };
 // ----------------------------------------------------------------------------------------
-// Packet_UshortStream_In_i declaration
+// Audio_SampleStream_In_i declaration
 // ----------------------------------------------------------------------------------------
-class Packet_UshortStream_In_i : public POA_Packet::UshortStream, public Port_Provides_base_impl
+class Audio_SampleStream_In_i : public POA_Audio::SampleStream, public Port_Provides_base_impl
 {
     public:
-        Packet_UshortStream_In_i(std::string port_name, AudioPortDevice_base *_parent);
-        ~Packet_UshortStream_In_i();
+        Audio_SampleStream_In_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Audio_SampleStream_In_i();
 
         CORBA::ULong getMaxPayloadSize();
         CORBA::ULong getMinPayloadSize();
@@ -76,13 +75,13 @@ class Packet_UshortStream_In_i : public POA_Packet::UshortStream, public Port_Pr
         boost::mutex portAccess;
 };
 // ----------------------------------------------------------------------------------------
-// DevMsgCtl_DeviceMessageControl_In_i declaration
+// Audio_SampleMessageControl_In_i declaration
 // ----------------------------------------------------------------------------------------
-class DevMsgCtl_DeviceMessageControl_In_i : public POA_DevMsgCtl::DeviceMessageControl, public Port_Provides_base_impl
+class Audio_SampleMessageControl_In_i : public POA_Audio::SampleMessageControl, public Port_Provides_base_impl
 {
     public:
-        DevMsgCtl_DeviceMessageControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
-        ~DevMsgCtl_DeviceMessageControl_In_i();
+        Audio_SampleMessageControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Audio_SampleMessageControl_In_i();
 
         CORBA::Boolean rxActive();
         CORBA::Boolean txActive();
@@ -159,14 +158,14 @@ class Audio_AudioPTT_Signal_Out_i : public Port_Uses_base_impl, public POA_Exten
         bool recConnectionsRefresh;
 };
 // ----------------------------------------------------------------------------------------
-// Packet_PayloadControl_Out_i declaration
+// Audio_SampleStreamControl_Out_i declaration
 // ----------------------------------------------------------------------------------------
-class Packet_PayloadControl_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
+class Audio_SampleStreamControl_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
 {
     ENABLE_LOGGING
     public:
-        Packet_PayloadControl_Out_i(std::string port_name, AudioPortDevice_base *_parent);
-        ~Packet_PayloadControl_Out_i();
+        Audio_SampleStreamControl_Out_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Audio_SampleStreamControl_Out_i();
 
         void setMaxPayloadSize(CORBA::ULong maxPayloadSize);
         void setMinPayloadSize(CORBA::ULong minPayloadSize);
@@ -191,7 +190,7 @@ class Packet_PayloadControl_Out_i : public Port_Uses_base_impl, public POA_Exten
         void connectPort(CORBA::Object_ptr connection, const char* connectionId)
         {
             boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
-            Packet::PayloadControl_var port = Packet::PayloadControl::_narrow(connection);
+            Audio::SampleStreamControl_var port = Audio::SampleStreamControl::_narrow(connection);
             outConnections.push_back(std::make_pair(port, connectionId));
             active = true;
             recConnectionsRefresh = true;
@@ -215,26 +214,26 @@ class Packet_PayloadControl_Out_i : public Port_Uses_base_impl, public POA_Exten
 
         std::string getRepid () const;
 
-        std::vector< std::pair<Packet::PayloadControl_var, std::string> > _getConnections()
+        std::vector< std::pair<Audio::SampleStreamControl_var, std::string> > _getConnections()
         {
             return outConnections;
         }
 
     protected:
         AudioPortDevice_i *parent;
-        std::vector < std::pair<Packet::PayloadControl_var, std::string> > outConnections;
+        std::vector < std::pair<Audio::SampleStreamControl_var, std::string> > outConnections;
         ExtendedCF::UsesConnectionSequence recConnections;
         bool recConnectionsRefresh;
 };
 // ----------------------------------------------------------------------------------------
-// Packet_UshortStream_Out_i declaration
+// Audio_SampleStream_Out_i declaration
 // ----------------------------------------------------------------------------------------
-class Packet_UshortStream_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
+class Audio_SampleStream_Out_i : public Port_Uses_base_impl, public POA_ExtendedCF::QueryablePort
 {
     ENABLE_LOGGING
     public:
-        Packet_UshortStream_Out_i(std::string port_name, AudioPortDevice_base *_parent);
-        ~Packet_UshortStream_Out_i();
+        Audio_SampleStream_Out_i(std::string port_name, AudioPortDevice_base *_parent);
+        ~Audio_SampleStream_Out_i();
 
         CORBA::ULong getMaxPayloadSize();
         CORBA::ULong getMinPayloadSize();
@@ -260,7 +259,7 @@ class Packet_UshortStream_Out_i : public Port_Uses_base_impl, public POA_Extende
         void connectPort(CORBA::Object_ptr connection, const char* connectionId)
         {
             boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
-            Packet::UshortStream_var port = Packet::UshortStream::_narrow(connection);
+            Audio::SampleStream_var port = Audio::SampleStream::_narrow(connection);
             outConnections.push_back(std::make_pair(port, connectionId));
             active = true;
             recConnectionsRefresh = true;
@@ -284,14 +283,14 @@ class Packet_UshortStream_Out_i : public Port_Uses_base_impl, public POA_Extende
 
         std::string getRepid () const;
 
-        std::vector< std::pair<Packet::UshortStream_var, std::string> > _getConnections()
+        std::vector< std::pair<Audio::SampleStream_var, std::string> > _getConnections()
         {
             return outConnections;
         }
 
     protected:
         AudioPortDevice_i *parent;
-        std::vector < std::pair<Packet::UshortStream_var, std::string> > outConnections;
+        std::vector < std::pair<Audio::SampleStream_var, std::string> > outConnections;
         ExtendedCF::UsesConnectionSequence recConnections;
         bool recConnectionsRefresh;
 };

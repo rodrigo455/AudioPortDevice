@@ -10,12 +10,12 @@
 class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
 {
     friend class Audio_AudibleAlertsAndAlarms_In_i;
-    friend class Packet_PayloadControl_In_i;
-    friend class Packet_UshortStream_In_i;
-    friend class DevMsgCtl_DeviceMessageControl_In_i;
+    friend class Audio_SampleStreamControl_In_i;
+    friend class Audio_SampleStream_In_i;
+    friend class Audio_SampleMessageControl_In_i;
     friend class Audio_AudioPTT_Signal_Out_i;
-    friend class Packet_PayloadControl_Out_i;
-    friend class Packet_UshortStream_Out_i;
+    friend class Audio_SampleStreamControl_Out_i;
+    friend class Audio_SampleStream_Out_i;
 
     public:
         AudioPortDevice_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl);
@@ -43,17 +43,17 @@ class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
         /// Port: audio_alertalarm_wf_provides_port
         Audio_AudibleAlertsAndAlarms_In_i *audio_alertalarm_wf_provides_port;
         /// Port: audio_sample_stream_ctrl_provides_port
-        Packet_PayloadControl_In_i *audio_sample_stream_ctrl_provides_port;
+        Audio_SampleStreamControl_In_i *audio_sample_stream_ctrl_provides_port;
         /// Port: audio_sample_stream_provides_port
-        Packet_UshortStream_In_i *audio_sample_stream_provides_port;
+        Audio_SampleStream_In_i *audio_sample_stream_provides_port;
         /// Port: audio_sample_msg_ctrl_provides_port
-        DevMsgCtl_DeviceMessageControl_In_i *audio_sample_msg_ctrl_provides_port;
+        Audio_SampleMessageControl_In_i *audio_sample_msg_ctrl_provides_port;
         /// Port: audio_ptt_uses_port
         Audio_AudioPTT_Signal_Out_i *audio_ptt_uses_port;
         /// Port: audio_sample_stream_ctrl_uses_port
-        Packet_PayloadControl_Out_i *audio_sample_stream_ctrl_uses_port;
+        Audio_SampleStreamControl_Out_i *audio_sample_stream_ctrl_uses_port;
         /// Port: audio_sample_stream_uses_port
-        Packet_UshortStream_Out_i *audio_sample_stream_uses_port;
+        Audio_SampleStream_Out_i *audio_sample_stream_uses_port;
 
     private:
         void construct();
