@@ -13,8 +13,8 @@ OSSIE_SDRROOT_AS_PREFIX
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # Dependencies
-PKG_CHECK_MODULES([PROJECTDEPS], [ossie >= 2.1 omniORB4 >= 4.1.0])
-PKG_CHECK_MODULES([INTERFACEDEPS], [jtrsInterfaces, audioInterfaces, packetInterfaces, devmsgctlInterfaces])
+PKG_CHECK_MODULES([PROJECTDEPS], [ossie >= 2.1 omniORB4 >= 4.1.0 alsa])
+PKG_CHECK_MODULES([INTERFACEDEPS], [jtrsInterfaces, audioInterfaces, packetInterfaces, devmsgctlInterfaces, bulkio])
 OSSIE_ENABLE_LOG4CXX
 AX_BOOST_BASE([1.41])
 AX_BOOST_SYSTEM

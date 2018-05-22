@@ -6,6 +6,7 @@
 #include <ossie/ThreadedComponent.h>
 
 #include "port_impl.h"
+#include <bulkio/bulkio.h>
 
 class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
 {
@@ -38,6 +39,14 @@ class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
         std::string device_kind;
         /// Property: device_model
         std::string device_model;
+        /// Property: input_device_name
+        std::string input_device_name;
+        /// Property: output_device_name
+        std::string output_device_name;
+        /// Property: sample_rate
+        CORBA::ULong sample_rate;
+        /// Property: ptt_device
+        std::string ptt_device;
 
         // Ports
         /// Port: audio_alertalarm_wf_provides_port
@@ -54,6 +63,8 @@ class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
         Audio_SampleStreamControl_Out_i *audio_sample_stream_ctrl_uses_port;
         /// Port: audio_sample_stream_uses_port
         Audio_SampleStream_Out_i *audio_sample_stream_uses_port;
+        /// Port: test_input
+        bulkio::OutUShortPort *test_input;
 
     private:
         void construct();

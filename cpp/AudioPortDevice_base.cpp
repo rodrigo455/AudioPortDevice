@@ -54,6 +54,8 @@ AudioPortDevice_base::~AudioPortDevice_base()
     audio_sample_stream_ctrl_uses_port = 0;
     audio_sample_stream_uses_port->_remove_ref();
     audio_sample_stream_uses_port = 0;
+    test_input->_remove_ref();
+    test_input = 0;
 }
 
 void AudioPortDevice_base::construct()
@@ -74,6 +76,8 @@ void AudioPortDevice_base::construct()
     addPort("audio_sample_stream_ctrl_uses_port", "Is used by the Audio Port Device to push packets to the Device User.", audio_sample_stream_ctrl_uses_port);
     audio_sample_stream_uses_port = new Audio_SampleStream_Out_i("audio_sample_stream_uses_port", this);
     addPort("audio_sample_stream_uses_port", "is used by the Audio Port Device to set the payload size of the\nincoming packets from the Device User.", audio_sample_stream_uses_port);
+    test_input = new bulkio::OutUShortPort("test_input");
+    addPort("test_input", test_input);
 
 }
 
@@ -124,6 +128,42 @@ void AudioPortDevice_base::loadProperties()
                 "",
                 "eq",
                 "allocation");
+
+    addProperty(input_device_name,
+                "plughw:0,0",
+                "input_device_name",
+                "input_device_name",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(output_device_name,
+                "default",
+                "output_device_name",
+                "output_device_name",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(sample_rate,
+                8000,
+                "sample_rate",
+                "sample_rate",
+                "readwrite",
+                "Hz",
+                "external",
+                "property");
+
+    addProperty(ptt_device,
+                "/dev/input/event2",
+                "ptt_device",
+                "ptt_device",
+                "readwrite",
+                "",
+                "external",
+                "property");
 
 }
 

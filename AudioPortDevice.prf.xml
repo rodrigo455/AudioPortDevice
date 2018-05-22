@@ -11,4 +11,25 @@
     <kind kindtype="allocation"/>
     <action type="eq"/>
   </simple>
+  <simple id="input_device_name" mode="readwrite" name="input_device_name" type="string">
+    <value>plughw:0,0</value>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="output_device_name" mode="readwrite" name="output_device_name" type="string">
+    <value>default</value>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="sample_rate" mode="readwrite" name="sample_rate" type="ulong">
+    <value>8000</value>
+    <units>Hz</units>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="ptt_device" mode="readwrite" name="ptt_device" type="string">
+    <value>/dev/input/event2</value>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
 </properties>

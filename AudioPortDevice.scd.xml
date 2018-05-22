@@ -33,18 +33,20 @@
         <porttype type="data"/>
       </provides>
       <uses repid="IDL:Audio/SampleStreamControl:1.0" usesname="audio_sample_stream_ctrl_uses_port">
-        <description>Is used by the Audio Port Device to push packets to the Device User.</description>
+        <description>is used by the Audio Port Device to set the payload size of the incoming packets from the Device User.</description>
         <porttype type="control"/>
       </uses>
       <uses repid="IDL:Audio/SampleStream:1.0" usesname="audio_sample_stream_uses_port">
-        <description>is used by the Audio Port Device to set the payload size of the
-incoming packets from the Device User.</description>
+        <description>Is used by the Audio Port Device to push packets to the Device User.</description>
         <porttype type="data"/>
       </uses>
       <provides repid="IDL:Audio/SampleMessageControl:1.0" providesname="audio_sample_msg_ctrl_provides_port">
         <description>Is provided by the Audio Port Device to manage the message flows.</description>
         <porttype type="control"/>
       </provides>
+      <uses repid="IDL:BULKIO/dataUshort:1.0" usesname="test_input">
+        <porttype type="data"/>
+      </uses>
     </ports>
   </componentfeatures>
   <interfaces>
@@ -90,6 +92,12 @@ incoming packets from the Device User.</description>
     </interface>
     <interface name="SampleMessageControl" repid="IDL:Audio/SampleMessageControl:1.0">
       <inheritsinterface repid="IDL:DevMsgCtl/DeviceMessageControl:1.0"/>
+    </interface>
+    <interface name="ProvidesPortStatisticsProvider" repid="IDL:BULKIO/ProvidesPortStatisticsProvider:1.0"/>
+    <interface name="updateSRI" repid="IDL:BULKIO/updateSRI:1.0"/>
+    <interface name="dataUshort" repid="IDL:BULKIO/dataUshort:1.0">
+      <inheritsinterface repid="IDL:BULKIO/ProvidesPortStatisticsProvider:1.0"/>
+      <inheritsinterface repid="IDL:BULKIO/updateSRI:1.0"/>
     </interface>
   </interfaces>
 </softwarecomponent>
