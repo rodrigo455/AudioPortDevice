@@ -44,10 +44,10 @@ class Audio_SampleStreamControl_In_i : public POA_Audio::SampleStreamControl, pu
         Audio_SampleStreamControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
         ~Audio_SampleStreamControl_In_i();
 
-        void setMaxPayloadSize(CORBA::ULong maxPayloadSize);
-        void setMinPayloadSize(CORBA::ULong minPayloadSize);
-        void setDesiredPayloadSize(CORBA::ULong desiredPayloadSize);
-        void setMinOverrideTimeout(CORBA::ULong minOverrideTimeout);
+        void setMaxPayloadSize(CORBA::ULong maxPayloadSize) throw (JTRS::InvalidParameter);
+        void setMinPayloadSize(CORBA::ULong minPayloadSize) throw (JTRS::InvalidParameter);
+        void setDesiredPayloadSize(CORBA::ULong desiredPayloadSize) throw (JTRS::InvalidParameter);
+        void setMinOverrideTimeout(CORBA::ULong minOverrideTimeout) throw (JTRS::InvalidParameter);
         std::string getRepid() const;
 
     protected:

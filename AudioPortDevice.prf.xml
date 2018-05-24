@@ -22,7 +22,7 @@
     <action type="external"/>
   </simple>
   <simple id="sample_rate" mode="readwrite" name="sample_rate" type="ulong">
-    <value>8000</value>
+    <value>16000</value>
     <units>Hz</units>
     <kind kindtype="property"/>
     <action type="external"/>

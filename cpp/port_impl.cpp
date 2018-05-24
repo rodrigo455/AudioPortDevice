@@ -70,28 +70,78 @@ Audio_SampleStreamControl_In_i::~Audio_SampleStreamControl_In_i()
 {
 }
 
-void Audio_SampleStreamControl_In_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
+void Audio_SampleStreamControl_In_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize) throw (JTRS::InvalidParameter)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+
+    if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
+    	if(maxPayloadSize <= MAX_PAYLOAD_SIZE_H && maxPayloadSize >= 1){
+			parent->tx_desired_payload = maxPayloadSize;
+			if(parent->tx_override_timeout < (maxPayloadSize*1000)/parent->sample_rate){
+				parent->tx_override_timeout = (maxPayloadSize*1000)/parent->sample_rate + 5;
+			}
+		}else{
+			throw JTRS::InvalidParameter();
+		}
+    	pthread_mutex_unlock(&parent->tx_stream_lock);
+    }else{
+    	throw JTRS::InvalidParameter();
+    }
+
 }
 
-void Audio_SampleStreamControl_In_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
+void Audio_SampleStreamControl_In_i::setMinPayloadSize(CORBA::ULong minPayloadSize) throw (JTRS::InvalidParameter)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+
+    if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
+    	if(minPayloadSize <= MIN_PAYLOAD_SIZE_H && minPayloadSize >= 0 && minPayloadSize <= parent->tx_desired_payload){
+			// Nothing to be done
+		}else{
+			pthread_mutex_unlock(&parent->tx_lock);
+		}
+		pthread_mutex_unlock(&parent->tx_stream_lock);
+	}else{
+		throw JTRS::InvalidParameter();
+	}
+
 }
 
-void Audio_SampleStreamControl_In_i::setDesiredPayloadSize(CORBA::ULong desiredPayloadSize)
+void Audio_SampleStreamControl_In_i::setDesiredPayloadSize(CORBA::ULong desiredPayloadSize) throw (JTRS::InvalidParameter)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+
+    if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
+    	if(desiredPayloadSize <= MAX_PAYLOAD_SIZE_H && desiredPayloadSize >= 1){
+			parent->tx_desired_payload = desiredPayloadSize;
+			if(parent->tx_override_timeout < (desiredPayloadSize*1000)/parent->sample_rate){
+				parent->tx_override_timeout = (desiredPayloadSize*1000)/parent->sample_rate + 5;
+			}
+		}else{
+			throw JTRS::InvalidParameter();
+		}
+		pthread_mutex_unlock(&parent->tx_stream_lock);
+	}else{
+		throw JTRS::InvalidParameter();
+	}
+
 }
 
-void Audio_SampleStreamControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverrideTimeout)
+void Audio_SampleStreamControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverrideTimeout) throw (JTRS::InvalidParameter)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+
+    if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
+    	if(minOverrideTimeout <= MIN_OVERRIDE_TIMEOUT_H
+    			&& minOverrideTimeout >= (parent->tx_desired_payload*1000)/parent->sample_rate){
+			parent->tx_override_timeout = minOverrideTimeout;
+		}else{
+			throw JTRS::InvalidParameter();
+		}
+		pthread_mutex_unlock(&parent->tx_stream_lock);
+	}else{
+		throw JTRS::InvalidParameter();
+	}
 }
 
 std::string Audio_SampleStreamControl_In_i::getRepid() const
@@ -177,15 +227,24 @@ CORBA::Boolean Audio_SampleMessageControl_In_i::rxActive()
 CORBA::Boolean Audio_SampleMessageControl_In_i::txActive()
 {
     boost::mutex::scoped_lock lock(portAccess);
-    CORBA::Boolean retval = 0;
-    // TODO: Fill in this function
+    CORBA::Boolean retval;
+    pthread_mutex_lock(&parent->tx_lock);
+    retval = parent->tx_active;
+	pthread_mutex_unlock(&parent->tx_lock);
+
     return retval;
 }
 
 void Audio_SampleMessageControl_In_i::abortTx(CORBA::UShort streamId)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+
+    pthread_mutex_lock(&parent->tx_lock);
+    parent->tx_active = false;
+    parent->tx_abort = true;
+	pthread_mutex_unlock(&parent->tx_lock);
+	pthread_join(parent->tx_thread, NULL);
+	parent->tx_abort = false;
 }
 
 std::string Audio_SampleMessageControl_In_i::getRepid() const

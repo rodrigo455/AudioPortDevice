@@ -9,14 +9,29 @@
 #include <unistd.h>
 #include <algorithm>
 #include <alsa/asoundlib.h>
+#include <alsa/mixer.h>
+#include <sys/time.h>
 
-#define EV_PRESSED 1
-#define EV_RELEASED 0
-#define EV_REPEAT 2
+#define EV_PRESSED 		1
+#define EV_RELEASED 	0
+#define EV_REPEAT 		2
+
+#define MAX_PAYLOAD_SIZE_H 		16383
+#define MIN_PAYLOAD_SIZE_H 		512
+#define MIN_OVERRIDE_TIMEOUT_H 	50
 
 class AudioPortDevice_i : public AudioPortDevice_base
 {
     ENABLE_LOGGING
+
+	friend class Audio_AudibleAlertsAndAlarms_In_i;
+	friend class Audio_SampleStreamControl_In_i;
+	friend class Audio_SampleStream_In_i;
+	friend class Audio_SampleMessageControl_In_i;
+	friend class Audio_AudioPTT_Signal_Out_i;
+	friend class Audio_SampleStreamControl_Out_i;
+	friend class Audio_SampleStream_Out_i;
+
     public:
         AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl);
         AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev);
@@ -43,14 +58,15 @@ class AudioPortDevice_i : public AudioPortDevice_base
         bool rx_active;
 
         pthread_mutex_t tx_lock;
+        pthread_mutex_t tx_stream_lock;
 
-        snd_pcm_t *input_handle;
-        snd_pcm_uframes_t input_period_size;
-        char *input_buffer;
+        snd_pcm_t *tx_handle;
+        char *tx_buffer;
         pthread_t tx_thread;
         Packet::Stream tx_stream;
+        CORBA::ULong tx_desired_payload;
+        CORBA::ULong tx_override_timeout;
 
-        /*ptt input event device descriptor*/
         int ptt_fd;
         pthread_t ptt_thread;
 
@@ -61,7 +77,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
 			return NULL;
 		}
 
-        bool readBuffer(void *vbuffer, unsigned nframes, unsigned sizeof_frame);
+        int readBuffer(void *vbuffer, int nframes, unsigned sizeof_frame);
 
         void pttThread();
         static void *ptt_thread_helper(void *context)
