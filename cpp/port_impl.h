@@ -24,7 +24,7 @@ class Audio_AudibleAlertsAndAlarms_In_i : public POA_Audio::AudibleAlertsAndAlar
         Audio_AudibleAlertsAndAlarms_In_i(std::string port_name, AudioPortDevice_base *_parent);
         ~Audio_AudibleAlertsAndAlarms_In_i();
 
-        CORBA::UShort createTone(const Audio::AudibleAlertsAndAlarms::ToneProfileType& toneProfile);
+        CORBA::UShort createTone(const Audio::AudibleAlertsAndAlarms::ToneProfileType& toneProfile) throw (Audio::AudibleAlertsAndAlarms::InvalidToneProfile);
         void startTone(CORBA::UShort toneId);
         void stopTone(CORBA::UShort toneId);
         void destroyTone(CORBA::UShort toneId);

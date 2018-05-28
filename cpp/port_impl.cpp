@@ -22,10 +22,16 @@ Audio_AudibleAlertsAndAlarms_In_i::~Audio_AudibleAlertsAndAlarms_In_i()
 }
 
 CORBA::UShort Audio_AudibleAlertsAndAlarms_In_i::createTone(const Audio::AudibleAlertsAndAlarms::ToneProfileType& toneProfile)
+	throw (Audio::AudibleAlertsAndAlarms::InvalidToneProfile)
 {
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::UShort retval = 0;
     // TODO: Fill in this function
+    if(toneProfile._d() == Audio::AudibleAlertsAndAlarms::SIMPLE_TONE){
+    	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = toneProfile.simpleTone();
+    	LOG_INFO(AudioPortDevice_i, "simple tone freq: "<< simple.frequencyInHz);
+    }
+
     return retval;
 }
 
@@ -84,8 +90,6 @@ void Audio_SampleStreamControl_In_i::setMaxPayloadSize(CORBA::ULong maxPayloadSi
 			throw JTRS::InvalidParameter();
 		}
     	pthread_mutex_unlock(&parent->tx_stream_lock);
-    }else{
-    	throw JTRS::InvalidParameter();
     }
 
 }
@@ -98,11 +102,9 @@ void Audio_SampleStreamControl_In_i::setMinPayloadSize(CORBA::ULong minPayloadSi
     	if(minPayloadSize <= MIN_PAYLOAD_SIZE_H && minPayloadSize >= 0 && minPayloadSize <= parent->tx_desired_payload){
 			// Nothing to be done
 		}else{
-			pthread_mutex_unlock(&parent->tx_lock);
+			throw JTRS::InvalidParameter();
 		}
 		pthread_mutex_unlock(&parent->tx_stream_lock);
-	}else{
-		throw JTRS::InvalidParameter();
 	}
 
 }
@@ -121,8 +123,6 @@ void Audio_SampleStreamControl_In_i::setDesiredPayloadSize(CORBA::ULong desiredP
 			throw JTRS::InvalidParameter();
 		}
 		pthread_mutex_unlock(&parent->tx_stream_lock);
-	}else{
-		throw JTRS::InvalidParameter();
 	}
 
 }
@@ -139,8 +139,6 @@ void Audio_SampleStreamControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverr
 			throw JTRS::InvalidParameter();
 		}
 		pthread_mutex_unlock(&parent->tx_stream_lock);
-	}else{
-		throw JTRS::InvalidParameter();
 	}
 }
 
@@ -195,8 +193,29 @@ CORBA::ULong Audio_SampleStream_In_i::getMinOverrideTimeout()
 
 void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
 {
+	int err;
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+
+    if(control.sequenceNumber == 0){
+    	if ((err = snd_pcm_prepare(parent->rx_handle)) < 0) {
+			LOG_ERROR(AudioPortDevice_i, "cannot prepare audio interface for use ("<< snd_strerror(err)<<")");
+			return;
+		}
+
+    	pthread_mutex_lock(&parent->rx_lock);
+    	parent->rx_active = true;
+    	pthread_mutex_unlock(&parent->rx_lock);
+    }
+
+    parent->writeBuffer(parent->rx_handle, payload.get_buffer(), payload.length(), sizeof(CORBA::ULong));
+
+    if(control.endOfStream){
+    	snd_pcm_drop(parent->rx_handle);
+    	pthread_mutex_lock(&parent->rx_lock);
+    	parent->rx_active = false;
+    	pthread_mutex_unlock(&parent->rx_lock);
+    }
+
 }
 
 std::string Audio_SampleStream_In_i::getRepid() const
@@ -219,9 +238,12 @@ Audio_SampleMessageControl_In_i::~Audio_SampleMessageControl_In_i()
 CORBA::Boolean Audio_SampleMessageControl_In_i::rxActive()
 {
     boost::mutex::scoped_lock lock(portAccess);
-    CORBA::Boolean retval = 0;
-    // TODO: Fill in this function
-    return retval;
+    CORBA::Boolean retval;
+	pthread_mutex_lock(&parent->rx_lock);
+	retval = parent->rx_active;
+	pthread_mutex_unlock(&parent->rx_lock);
+
+	return retval;
 }
 
 CORBA::Boolean Audio_SampleMessageControl_In_i::txActive()

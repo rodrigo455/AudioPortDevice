@@ -47,6 +47,10 @@ class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
         CORBA::ULong sample_rate;
         /// Property: ptt_device
         std::string ptt_device;
+        /// Property: gain
+        CORBA::ULong gain;
+        /// Property: volume
+        CORBA::ULong volume;
 
         // Ports
         /// Port: audio_alertalarm_wf_provides_port

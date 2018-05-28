@@ -59,9 +59,14 @@ class AudioPortDevice_i : public AudioPortDevice_base
 
         pthread_mutex_t tx_lock;
         pthread_mutex_t tx_stream_lock;
+        pthread_mutex_t rx_lock;
 
         snd_pcm_t *tx_handle;
+        snd_pcm_t *rx_handle;
+
         char *tx_buffer;
+        //char *rx_buffer;
+
         pthread_t tx_thread;
         Packet::Stream tx_stream;
         CORBA::ULong tx_desired_payload;
@@ -77,6 +82,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
 			return NULL;
 		}
 
+        int writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, int nframes, unsigned sizeof_frame);
         int readBuffer(void *vbuffer, int nframes, unsigned sizeof_frame);
 
         void pttThread();
@@ -85,6 +91,8 @@ class AudioPortDevice_i : public AudioPortDevice_base
         	((AudioPortDevice_i *)context)->pttThread();
         	return NULL;
 		}
+
+        bool init_pcm_playback(snd_pcm_t **pcm_handle, const char *card_name, unsigned int *sample_rate, snd_pcm_format_t format);
 };
 
 #endif // AUDIOPORTDEVICE_I_IMPL_H

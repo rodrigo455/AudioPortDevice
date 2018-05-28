@@ -57,6 +57,8 @@ void AudioPortDevice_i::constructor()
 	pthread_mutex_init(&tx_lock, NULL);
 	pthread_mutex_init(&tx_stream_lock, NULL);
 
+	pthread_mutex_init(&rx_lock, NULL);
+
 	/* INPUT AUDIO DEVICE */
 
 	if ((err = snd_pcm_open(&tx_handle, input_device_name.c_str(), SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK)) < 0) {
@@ -66,7 +68,7 @@ void AudioPortDevice_i::constructor()
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot allocate hardware parameter structure ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot allocate hardware parameter structure for input audio device!");
+		throw CF::Device::InvalidState("Cannot allocate hardware parameter structure!");
 	}
 
 	if ((err = snd_pcm_hw_params_any(tx_handle, hw_params)) < 0) {
@@ -103,6 +105,14 @@ void AudioPortDevice_i::constructor()
 
 	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * snd_pcm_format_size(format, 1));
 
+	/* OUTPUT AUDIO DEVICE */
+
+	if(!init_pcm_playback(&rx_handle, output_device_name.c_str(), &sample_rate, format)){
+		throw CF::Device::InvalidState("Cannot initialize output audio device!");
+	}
+
+	//rx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * snd_pcm_format_size(format, 1));
+
 	/* PTT INPUT EVENT DEVICE*/
 
 	ptt_fd = open(ptt_device.c_str(), O_RDONLY);
@@ -112,6 +122,58 @@ void AudioPortDevice_i::constructor()
 	}
 
 	start();
+}
+
+bool AudioPortDevice_i::init_pcm_playback(snd_pcm_t **pcm_handle, const char *card_name, unsigned int *sample_rate, snd_pcm_format_t format){
+
+	int err;
+	snd_pcm_hw_params_t *hw_params;
+
+    LOG_INFO(AudioPortDevice_i,"push_packet 0");
+
+	if((err = snd_pcm_open(pcm_handle, card_name, SND_PCM_STREAM_PLAYBACK, 0)) < 0){
+		LOG_ERROR(AudioPortDevice_i, "cannot open audio device "<<card_name << " ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot allocate hardware parameter structure ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	if ((err = snd_pcm_hw_params_any(*pcm_handle, hw_params)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot initialize hardware parameter structure ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	if ((err = snd_pcm_hw_params_set_access(*pcm_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot set access type ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	if ((err = snd_pcm_hw_params_set_format(*pcm_handle, hw_params, format)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot set sample format ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	if ((err = snd_pcm_hw_params_set_rate_near(*pcm_handle, hw_params, sample_rate, 0)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot set sample rate ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	if ((err = snd_pcm_hw_params_set_channels(*pcm_handle, hw_params, 1)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot set channel count ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	if ((err = snd_pcm_hw_params(*pcm_handle, hw_params)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot set parameters ("<< snd_strerror(err)<<")");
+		return false;
+	}
+
+	snd_pcm_hw_params_free(hw_params);
+
+	return true;
 }
 
 void AudioPortDevice_i::start() throw (CORBA::SystemException, CF::Resource::StartError) {
@@ -137,8 +199,12 @@ void AudioPortDevice_i::releaseObject() throw (CORBA::SystemException, CF::LifeC
 	pthread_mutex_destroy(&tx_lock);
 	pthread_mutex_destroy(&tx_stream_lock);
 
+	pthread_mutex_destroy(&rx_lock);
+
 	free(tx_buffer);
+	//free(rx_buffer);
 	snd_pcm_close(tx_handle);
+	snd_pcm_close(rx_handle);
 
 	close(ptt_fd);
 
@@ -158,6 +224,19 @@ void AudioPortDevice_i::releaseObject() throw (CORBA::SystemException, CF::LifeC
 **************************************************************************/
 void AudioPortDevice_i::updateUsageState()
 {
+	pthread_mutex_lock(&tx_lock);
+	pthread_mutex_lock(&rx_lock);
+
+	if(!rx_active && !tx_active){
+		setUsageState(CF::Device::IDLE);
+	}else if(rx_active || tx_active){
+		setUsageState(CF::Device::ACTIVE);
+	}else{
+		setUsageState(CF::Device::BUSY);
+	}
+
+	pthread_mutex_unlock(&tx_lock);
+	pthread_mutex_unlock(&rx_lock);
 }
 
 int AudioPortDevice_i::serviceFunction()
@@ -179,6 +258,11 @@ void AudioPortDevice_i::txThread(){
 		throw CF::Device::InvalidState("Cannot prepare input audio device interface for use!");
 	}
 
+	if ((err = snd_pcm_start(tx_handle)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot start PCM stream input device ("<< snd_strerror(err)<<")");
+		throw CF::Device::InvalidState("Cannot start PCM stream input device!");
+	}
+
 	/* BULKIO TEST BEGIN*/
 	BULKIO::StreamSRI sri = BULKIO::StreamSRI();
 	sri.xdelta = 1.0/sample_rate;
@@ -186,6 +270,9 @@ void AudioPortDevice_i::txThread(){
 	sri.streamID = "test";
 	test_input->pushSRI(sri);
 	/* BULKIO TEST END TODO: remove this*/
+
+	// fill buffer a bit.. after pcm starts
+	usleep(tx_override_timeout*1e3);
 
 	pthread_mutex_lock(&tx_lock);
 
@@ -242,13 +329,47 @@ void AudioPortDevice_i::txThread(){
 	pthread_mutex_unlock(&tx_stream_lock);
 }
 
+int AudioPortDevice_i::writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, int nframes, unsigned sizeof_frame){
+
+	const unsigned char *buffer = (const unsigned char *) vbuffer;
+	int ret, orig_nframes;
+
+	orig_nframes = nframes;
+
+	while (nframes > 0) {
+		ret = snd_pcm_writei(pcm_handle, buffer, nframes);
+
+		if(ret > 0){
+
+			nframes -= ret;
+			buffer += ret * sizeof_frame;
+
+		}else if (ret == -EAGAIN) {
+			continue;  // try again
+		} else if (ret == -EPIPE) {  // underrun
+			fputs("U", stderr);
+			if ((ret = snd_pcm_prepare(pcm_handle)) < 0) {
+				LOG_ERROR(AudioPortDevice_i, "snd_pcm_prepare failed. Can't recover from underrun");
+				return ret;
+			}
+			continue;  // try again
+
+		} else if (ret < 0) {
+			LOG_ERROR(AudioPortDevice_i, "snd_pcm_writei failed");
+			return ret;
+		}
+	}
+
+	return orig_nframes;
+}
+
 int AudioPortDevice_i::readBuffer(void *vbuffer, int nframes, unsigned sizeof_frame){
 
 	unsigned char *buffer = (unsigned char*) vbuffer;
 	int ret, orig_nframes;
 	struct timeval start, end, diff;
-	orig_nframes = nframes;
 
+	orig_nframes = nframes;
 	gettimeofday(&start, NULL);
 
 	while (nframes > 0) {
@@ -271,7 +392,7 @@ int AudioPortDevice_i::readBuffer(void *vbuffer, int nframes, unsigned sizeof_fr
 			continue;   // try again
 		}else if (ret == -EPIPE) {  // overrun
 
-			fputs("aO", stderr);
+			fputs("O", stderr);
 			if ((ret = snd_pcm_prepare(tx_handle)) < 0) {
 				LOG_ERROR(AudioPortDevice_i, "snd_pcm_prepare failed. Can't recover from overrun");
 				return ret;
@@ -285,6 +406,8 @@ int AudioPortDevice_i::readBuffer(void *vbuffer, int nframes, unsigned sizeof_fr
 
 	}
 
+	//LOG_INFO(AudioPortDevice_i, "retval: "<< (orig_nframes - nframes));
+	//LOG_INFO(AudioPortDevice_i, "Interval: "<< diff.tv_usec);
 	return (orig_nframes - nframes);
 }
 

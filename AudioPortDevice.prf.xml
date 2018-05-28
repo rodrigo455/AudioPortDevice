@@ -3,20 +3,22 @@
 <properties>
   <simple id="DCE:cdc5ee18-7ceb-4ae6-bf4c-31f983179b4d" mode="readonly" name="device_kind" type="string">
     <description>This specifies the device kind</description>
+    <value>AUDIO</value>
     <kind kindtype="allocation"/>
     <action type="eq"/>
   </simple>
   <simple id="DCE:0f99b2e4-9903-4631-9846-ff349d18ecfb" mode="readonly" name="device_model" type="string">
     <description> This specifies the specific device</description>
+    <value>ALSA</value>
     <kind kindtype="allocation"/>
     <action type="eq"/>
   </simple>
-  <simple id="input_device_name" mode="readwrite" name="input_device_name" type="string">
+  <simple id="input_device_name" mode="readonly" name="input_device_name" type="string" commandline="true">
     <value>plughw:0,0</value>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="output_device_name" mode="readwrite" name="output_device_name" type="string">
+  <simple id="output_device_name" mode="readonly" name="output_device_name" type="string" commandline="true">
     <value>default</value>
     <kind kindtype="property"/>
     <action type="external"/>
@@ -27,8 +29,20 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="ptt_device" mode="readwrite" name="ptt_device" type="string">
+  <simple id="ptt_device" mode="readonly" name="ptt_device" type="string" commandline="true">
     <value>/dev/input/event2</value>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="gain" mode="readwrite" name="gain" type="ulong">
+    <value>75</value>
+    <range max="100" min="0"/>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="volume" mode="readwrite" name="volume" type="ulong">
+    <value>75</value>
+    <range max="100" min="0"/>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>

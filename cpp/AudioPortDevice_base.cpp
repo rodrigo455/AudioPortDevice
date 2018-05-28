@@ -114,6 +114,7 @@ void AudioPortDevice_base::releaseObject() throw (CORBA::SystemException, CF::Li
 void AudioPortDevice_base::loadProperties()
 {
     addProperty(device_kind,
+                "AUDIO",
                 "DCE:cdc5ee18-7ceb-4ae6-bf4c-31f983179b4d",
                 "device_kind",
                 "readonly",
@@ -122,6 +123,7 @@ void AudioPortDevice_base::loadProperties()
                 "allocation");
 
     addProperty(device_model,
+                "ALSA",
                 "DCE:0f99b2e4-9903-4631-9846-ff349d18ecfb",
                 "device_model",
                 "readonly",
@@ -133,7 +135,7 @@ void AudioPortDevice_base::loadProperties()
                 "plughw:0,0",
                 "input_device_name",
                 "input_device_name",
-                "readwrite",
+                "readonly",
                 "",
                 "external",
                 "property");
@@ -142,7 +144,7 @@ void AudioPortDevice_base::loadProperties()
                 "default",
                 "output_device_name",
                 "output_device_name",
-                "readwrite",
+                "readonly",
                 "",
                 "external",
                 "property");
@@ -160,6 +162,24 @@ void AudioPortDevice_base::loadProperties()
                 "/dev/input/event2",
                 "ptt_device",
                 "ptt_device",
+                "readonly",
+                "",
+                "external",
+                "property");
+
+    addProperty(gain,
+                75,
+                "gain",
+                "gain",
+                "readwrite",
+                "",
+                "external",
+                "property");
+
+    addProperty(volume,
+                75,
+                "volume",
+                "volume",
                 "readwrite",
                 "",
                 "external",
