@@ -20,6 +20,13 @@
 #define MIN_PAYLOAD_SIZE_H 		512
 #define MIN_OVERRIDE_TIMEOUT_H 	50
 
+struct ToneControl {
+	bool status;
+	pthread_mutex_t lock;
+	pthread_t thread;
+	Audio::AudibleAlertsAndAlarms::ToneProfileType profile;
+};
+
 class AudioPortDevice_i : public AudioPortDevice_base
 {
     ENABLE_LOGGING
@@ -75,6 +82,9 @@ class AudioPortDevice_i : public AudioPortDevice_base
         int ptt_fd;
         pthread_t ptt_thread;
 
+        std::string input_device_name;
+        std::string output_device_name;
+
         void txThread();
         static void *tx_thread_helper(void *context)
 		{
@@ -82,7 +92,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
 			return NULL;
 		}
 
-        int writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, int nframes, unsigned sizeof_frame);
+        static int writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, int nframes, unsigned sizeof_frame);
         int readBuffer(void *vbuffer, int nframes, unsigned sizeof_frame);
 
         void pttThread();
@@ -92,7 +102,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
         	return NULL;
 		}
 
-        bool init_pcm_playback(snd_pcm_t **pcm_handle, const char *card_name, unsigned int *sample_rate, snd_pcm_format_t format);
+        static bool init_pcm_playback(snd_pcm_t **pcm_handle, const char *card_name, unsigned int *sample_rate, snd_pcm_format_t format);
 };
 
 #endif // AUDIOPORTDEVICE_I_IMPL_H

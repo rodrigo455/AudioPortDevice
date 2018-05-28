@@ -131,19 +131,17 @@ void AudioPortDevice_base::loadProperties()
                 "eq",
                 "allocation");
 
-    addProperty(input_device_name,
-                "plughw:0,0",
-                "input_device_name",
-                "input_device_name",
+    addProperty(input_card,
+                "input_card",
+                "input_card",
                 "readonly",
                 "",
                 "external",
                 "property");
 
-    addProperty(output_device_name,
-                "default",
-                "output_device_name",
-                "output_device_name",
+    addProperty(output_card,
+                "output_card",
+                "output_card",
                 "readonly",
                 "",
                 "external",

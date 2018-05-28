@@ -27,10 +27,41 @@ CORBA::UShort Audio_AudibleAlertsAndAlarms_In_i::createTone(const Audio::Audible
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::UShort retval = 0;
     // TODO: Fill in this function
+
+    /* TEST TONE BEGIN*/
+    snd_pcm_t *tone_handle;
+    unsigned int sample_rate = 8000;
+    char *buffer;
+    float phase = 0;
+    float delta_phase = 0;
+
+    buffer = (char*)malloc(4000 * sizeof(short));
+
+
     if(toneProfile._d() == Audio::AudibleAlertsAndAlarms::SIMPLE_TONE){
     	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = toneProfile.simpleTone();
-    	LOG_INFO(AudioPortDevice_i, "simple tone freq: "<< simple.frequencyInHz);
+
+    	AudioPortDevice_i::init_pcm_playback(&tone_handle, parent->output_device_name.c_str(), &sample_rate, SND_PCM_FORMAT_S16_LE);
+
+    	delta_phase = 2*M_PI*simple.frequencyInHz/sample_rate;
+    	for(int i = 0; i < 4000; i++){
+    		phase += delta_phase;
+    		buffer[i] = 4000*cosf(phase);
+    	}
+
+    	if (snd_pcm_prepare(tone_handle) < 0) {
+			return retval;
+		}
+
+    	AudioPortDevice_i::writeBuffer(tone_handle, buffer, 4000, sizeof(short));
+
+    	snd_pcm_drain(tone_handle);
+
     }
+
+    free(buffer);
+
+    /* TEST TONE END TODO remove */
 
     return retval;
 }
@@ -210,7 +241,7 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
     parent->writeBuffer(parent->rx_handle, payload.get_buffer(), payload.length(), sizeof(CORBA::ULong));
 
     if(control.endOfStream){
-    	snd_pcm_drop(parent->rx_handle);
+    	snd_pcm_drain(parent->rx_handle);
     	pthread_mutex_lock(&parent->rx_lock);
     	parent->rx_active = false;
     	pthread_mutex_unlock(&parent->rx_lock);

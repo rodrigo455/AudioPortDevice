@@ -34,6 +34,7 @@ class Audio_AudibleAlertsAndAlarms_In_i : public POA_Audio::AudibleAlertsAndAlar
     protected:
         AudioPortDevice_i *parent;
         boost::mutex portAccess;
+
 };
 // ----------------------------------------------------------------------------------------
 // Audio_SampleStreamControl_In_i declaration

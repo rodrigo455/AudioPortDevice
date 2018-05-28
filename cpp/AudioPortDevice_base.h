@@ -39,10 +39,10 @@ class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
         std::string device_kind;
         /// Property: device_model
         std::string device_model;
-        /// Property: input_device_name
-        std::string input_device_name;
-        /// Property: output_device_name
-        std::string output_device_name;
+        /// Property: input_card
+        std::string input_card;
+        /// Property: output_card
+        std::string output_card;
         /// Property: sample_rate
         CORBA::ULong sample_rate;
         /// Property: ptt_device

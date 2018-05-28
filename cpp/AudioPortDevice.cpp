@@ -45,6 +45,12 @@ void AudioPortDevice_i::constructor()
 	snd_pcm_hw_params_t *hw_params;
 	snd_pcm_format_t format = SND_PCM_FORMAT_U16_LE;
 
+	// To get card names run the command:
+	// aplay -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
+	// arecord -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
+	input_device_name = "plughw";
+	output_device_name = "plug:dmix";
+
 	tx_active = false;
 	tx_abort = false;
 	rx_active = false;
@@ -60,6 +66,10 @@ void AudioPortDevice_i::constructor()
 	pthread_mutex_init(&rx_lock, NULL);
 
 	/* INPUT AUDIO DEVICE */
+
+	if(!input_card.empty()){
+		input_device_name += ":"+input_card;
+	}
 
 	if ((err = snd_pcm_open(&tx_handle, input_device_name.c_str(), SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot open audio device "<<input_device_name << " ("<< snd_strerror(err)<<")");
@@ -107,6 +117,10 @@ void AudioPortDevice_i::constructor()
 
 	/* OUTPUT AUDIO DEVICE */
 
+	if(!output_card.empty()){
+		output_device_name += ":"+output_card;
+	}
+
 	if(!init_pcm_playback(&rx_handle, output_device_name.c_str(), &sample_rate, format)){
 		throw CF::Device::InvalidState("Cannot initialize output audio device!");
 	}
@@ -128,8 +142,6 @@ bool AudioPortDevice_i::init_pcm_playback(snd_pcm_t **pcm_handle, const char *ca
 
 	int err;
 	snd_pcm_hw_params_t *hw_params;
-
-    LOG_INFO(AudioPortDevice_i,"push_packet 0");
 
 	if((err = snd_pcm_open(pcm_handle, card_name, SND_PCM_STREAM_PLAYBACK, 0)) < 0){
 		LOG_ERROR(AudioPortDevice_i, "cannot open audio device "<<card_name << " ("<< snd_strerror(err)<<")");
