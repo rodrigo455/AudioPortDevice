@@ -82,6 +82,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
         AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev);
         ~AudioPortDevice_i();
 
+        void construct();
         void constructor();
 
         int serviceFunction();

@@ -105,43 +105,71 @@ void ToneControl::simple_tone_thread(){
 }
 
 void ToneControl::complex_tone_thread(){
-	//TODO
+	snd_pcm_t *tone_handle;
+	unsigned int sample_rate = TONE_SAMPLE_RATE;
+	const Audio::AudibleAlertsAndAlarms::ComplexToneProfile complex = profile.complexTone();
+	CORBA::UShort repeat = complex.numberOfRepeats;
+
+	AudioPortDevice_i::init_pcm_playback(
+			&tone_handle,
+			audio_device->output_device_name.c_str(),
+			&sample_rate,
+			SND_PCM_FORMAT_S16_LE);
+
+	if (snd_pcm_prepare(tone_handle) < 0) {
+		snd_pcm_close(tone_handle);
+		LOG_ERROR(AudioPortDevice_i, "Could not start tone");
+		return;
+	}
+
+	pthread_mutex_lock(&lock);
+	while(status && (repeat--)){
+		pthread_mutex_unlock(&lock);
+
+		AudioPortDevice_i::writeBuffer(
+				tone_handle,
+				complex.toneSamples.get_buffer(),
+				complex.toneSamples.length(),
+				sizeof(short));
+
+		pthread_mutex_lock(&lock);
+	}
+	status = false; // ensure status false
+	pthread_mutex_unlock(&lock);
+
+	snd_pcm_drop(tone_handle);
+	snd_pcm_close(tone_handle);
 }
 
 AudioPortDevice_i::AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
     AudioPortDevice_base(devMgr_ior, id, lbl, sftwrPrfl)
 {
+	construct();
 }
 
 AudioPortDevice_i::AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev) :
     AudioPortDevice_base(devMgr_ior, id, lbl, sftwrPrfl, compDev)
 {
+	construct();
 }
 
 AudioPortDevice_i::AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities) :
     AudioPortDevice_base(devMgr_ior, id, lbl, sftwrPrfl, capacities)
 {
+	construct();
 }
 
 AudioPortDevice_i::AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev) :
     AudioPortDevice_base(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev)
 {
+	construct();
 }
 
 AudioPortDevice_i::~AudioPortDevice_i()
 {
 }
 
-void AudioPortDevice_i::constructor()
-{
-    /***********************************************************************************
-     This is the RH constructor. All properties are properly initialized before this function is called 
-    ***********************************************************************************/
-
-	int err;
-	snd_pcm_hw_params_t *hw_params;
-	snd_pcm_format_t format = SND_PCM_FORMAT_U16_LE;
-
+void AudioPortDevice_i::construct(){
 	// To get card names run the command:
 	// aplay -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
 	// arecord -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
@@ -161,6 +189,16 @@ void AudioPortDevice_i::constructor()
 	pthread_mutex_init(&tx_stream_lock, NULL);
 
 	pthread_mutex_init(&rx_lock, NULL);
+}
+
+void AudioPortDevice_i::constructor()
+{
+    /***********************************************************************************
+     This is the RH constructor. All properties are properly initialized before this function is called
+    ***********************************************************************************/
+	int err;
+	snd_pcm_hw_params_t *hw_params;
+	snd_pcm_format_t format = SND_PCM_FORMAT_U16_LE;
 
 	/* INPUT AUDIO DEVICE */
 
@@ -305,7 +343,6 @@ void AudioPortDevice_i::releaseObject() throw (CORBA::SystemException, CF::LifeC
 	pthread_mutex_destroy(&rx_lock);
 
 	free(tx_buffer);
-	//free(rx_buffer);
 	snd_pcm_close(tx_handle);
 
 	close(ptt_fd);
