@@ -19,75 +19,109 @@ Port_Provides_base_impl(port_name)
 
 Audio_AudibleAlertsAndAlarms_In_i::~Audio_AudibleAlertsAndAlarms_In_i()
 {
+	std::map<CORBA::UShort, ToneControl*>::iterator it;
+
+	for (it = tone_map.begin(); it != tone_map.end(); ++it ) {
+		it->second->stop();
+		delete it->second;
+	}
+	tone_map.clear();
 }
 
 CORBA::UShort Audio_AudibleAlertsAndAlarms_In_i::createTone(const Audio::AudibleAlertsAndAlarms::ToneProfileType& toneProfile)
 	throw (Audio::AudibleAlertsAndAlarms::InvalidToneProfile)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    CORBA::UShort retval = 0;
-    // TODO: Fill in this function
 
-    /* TEST TONE BEGIN*/
-    snd_pcm_t *tone_handle;
-    unsigned int sample_rate = 8000;
-    char *buffer;
-    float phase = 0;
-    float delta_phase = 0;
-
-    buffer = (char*)malloc(4000 * sizeof(short));
-
+    std::map<CORBA::UShort, ToneControl*>::iterator it;
+    CORBA::UShort toneId = 0;
 
     if(toneProfile._d() == Audio::AudibleAlertsAndAlarms::SIMPLE_TONE){
     	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = toneProfile.simpleTone();
 
-    	AudioPortDevice_i::init_pcm_playback(&tone_handle, parent->output_device_name.c_str(), &sample_rate, SND_PCM_FORMAT_S16_LE);
-
-    	delta_phase = 2*M_PI*simple.frequencyInHz/sample_rate;
-    	for(int i = 0; i < 4000; i++){
-    		phase += delta_phase;
-    		buffer[i] = 4000*cosf(phase);
+    	if(simple.frequencyInHz > 4000 && simple.frequencyInHz < 50){
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "frequencyInHz out of range [50,4000]");
     	}
 
-    	if (snd_pcm_prepare(tone_handle) < 0) {
-			return retval;
-		}
+    	if(!simple.durationPerBurstInMs){
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "durationPerBurstInMs out of range [1,65535]");
+    	}
 
-    	AudioPortDevice_i::writeBuffer(tone_handle, buffer, 4000, sizeof(short));
+    	if(simple.repeatIntervalInMs && simple.repeatIntervalInMs < simple.durationPerBurstInMs){
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "repeatIntervalInMs must be 0 or greater than durationPerBurstInMs");
+    	}
 
-    	snd_pcm_drain(tone_handle);
+    }else{
+    	const Audio::AudibleAlertsAndAlarms::ComplexToneProfile complex = toneProfile.complexTone();
+    	int sample_counter = 0;
 
+    	for (it=tone_map.begin(); it!=tone_map.end(); ++it){
+    		sample_counter += it->second->getNumSamples();
+    	}
+
+    	if((sample_counter + complex.toneSamples.length()) > 196608){
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "Cannot store more than 196608 samples");
+    	}
     }
 
-    free(buffer);
+    while((it = tone_map.find(toneId)) != tone_map.end()){
+    	toneId++;
+    }
 
-    /* TEST TONE END TODO remove */
+    tone_map.insert(std::make_pair(toneId, new ToneControl(toneProfile, parent)));
 
-    return retval;
+    return toneId;
 }
 
-void Audio_AudibleAlertsAndAlarms_In_i::startTone(CORBA::UShort toneId)
+void Audio_AudibleAlertsAndAlarms_In_i::startTone(CORBA::UShort toneId) throw (Audio::AudibleAlertsAndAlarms::InvalidToneId)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+    std::map<CORBA::UShort, ToneControl*>::iterator it;
+
+    it = tone_map.find(toneId);
+    if(it == tone_map.end()){
+    	throw Audio::AudibleAlertsAndAlarms::InvalidToneId("Invalid ToneId");
+    }
+
+	it->second->start();
 }
 
-void Audio_AudibleAlertsAndAlarms_In_i::stopTone(CORBA::UShort toneId)
+void Audio_AudibleAlertsAndAlarms_In_i::stopTone(CORBA::UShort toneId) throw (Audio::AudibleAlertsAndAlarms::InvalidToneId)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+    std::map<CORBA::UShort, ToneControl*>::iterator it;
+
+	it = tone_map.find(toneId);
+	if(it == tone_map.end()){
+		throw Audio::AudibleAlertsAndAlarms::InvalidToneId("Invalid ToneId");
+	}
+
+	it->second->stop();
 }
 
-void Audio_AudibleAlertsAndAlarms_In_i::destroyTone(CORBA::UShort toneId)
+void Audio_AudibleAlertsAndAlarms_In_i::destroyTone(CORBA::UShort toneId) throw (Audio::AudibleAlertsAndAlarms::InvalidToneId)
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+    std::map<CORBA::UShort, ToneControl*>::iterator it;
+
+	it = tone_map.find(toneId);
+	if(it == tone_map.end()){
+		throw Audio::AudibleAlertsAndAlarms::InvalidToneId("Invalid ToneId");
+	}
+
+	it->second->stop();
+	delete it->second;
+
+	tone_map.erase(it);
 }
 
 void Audio_AudibleAlertsAndAlarms_In_i::stopAllTones()
 {
     boost::mutex::scoped_lock lock(portAccess);
-    // TODO: Fill in this function
+    std::map<CORBA::UShort, ToneControl*>::iterator it;
+	for (it = tone_map.begin(); it != tone_map.end(); ++it ) {
+		it->second->stop();
+	}
 }
 
 std::string Audio_AudibleAlertsAndAlarms_In_i::getRepid() const
@@ -188,6 +222,12 @@ Port_Provides_base_impl(port_name)
 
 Audio_SampleStream_In_i::~Audio_SampleStream_In_i()
 {
+	std::map<Packet::Stream, StreamControl>::iterator it;
+	for (it = stream_map.begin(); it != stream_map.end(); ++it) {
+		snd_pcm_drop(it->second.pcm_handle);
+		snd_pcm_close(it->second.pcm_handle);
+	}
+	stream_map.clear();
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMaxPayloadSize()
@@ -195,6 +235,7 @@ CORBA::ULong Audio_SampleStream_In_i::getMaxPayloadSize()
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
     // TODO: Fill in this function
+    // This should be tuned according to the hardware
     return retval;
 }
 
@@ -203,6 +244,7 @@ CORBA::ULong Audio_SampleStream_In_i::getMinPayloadSize()
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
     // TODO: Fill in this function
+    // This should be tuned according to the hardware
     return retval;
 }
 
@@ -211,6 +253,7 @@ CORBA::ULong Audio_SampleStream_In_i::getDesiredPayloadSize()
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
     // TODO: Fill in this function
+    // This should be tuned according to the hardware
     return retval;
 }
 
@@ -219,6 +262,7 @@ CORBA::ULong Audio_SampleStream_In_i::getMinOverrideTimeout()
     boost::mutex::scoped_lock lock(portAccess);
     CORBA::ULong retval = 0;
     // TODO: Fill in this function
+    // This should be tuned according to the hardware
     return retval;
 }
 
@@ -259,6 +303,7 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 
     if(it->second.seq_number != control.sequenceNumber){
 		LOG_WARN(AudioPortDevice_i, "Sequence Number doesn't match, a packet might be lost");
+		it->second.seq_number = control.sequenceNumber;
 	}
 
     it->second.seq_number++;

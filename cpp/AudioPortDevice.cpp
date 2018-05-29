@@ -11,6 +11,103 @@
 
 PREPARE_LOGGING(AudioPortDevice_i)
 
+ToneControl::ToneControl(Audio::AudibleAlertsAndAlarms::ToneProfileType profile, AudioPortDevice_i* dev):profile(profile){
+	status = false;
+	pthread_mutex_init(&lock, NULL);
+	thread = 0;
+	audio_device = static_cast<AudioPortDevice_i *>(dev);
+}
+
+ToneControl::~ToneControl(){
+	stop();
+	pthread_mutex_destroy(&lock);
+}
+
+void ToneControl::start(){
+	pthread_mutex_lock(&lock);
+	status = true;
+	pthread_mutex_unlock(&lock);
+	if(profile._d() == Audio::AudibleAlertsAndAlarms::SIMPLE_TONE){
+		pthread_create(&thread, NULL, &ToneControl::simple_tone_thread_helper, this);
+	}else{
+		pthread_create(&thread, NULL, &ToneControl::complex_tone_thread_helper, this);
+	}
+}
+
+void ToneControl::stop(){
+	pthread_mutex_lock(&lock);
+	status = false;
+	pthread_mutex_unlock(&lock);
+	pthread_join(thread, NULL);
+}
+
+CORBA::ULong ToneControl::getNumSamples(){
+	if(profile._d() == Audio::AudibleAlertsAndAlarms::SIMPLE_TONE){
+		return 0;
+	}else{
+		return profile.complexTone().toneSamples.length();
+	}
+}
+
+void ToneControl::simple_tone_thread(){
+
+	snd_pcm_t *tone_handle;
+	unsigned int sample_rate = TONE_SAMPLE_RATE;
+	short *buffer;
+	int nsamples;
+	float phase = 0;
+	float delta_phase = 0;
+
+	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = profile.simpleTone();
+
+	nsamples = simple.durationPerBurstInMs* (sample_rate/1e3);
+	buffer = (short*)malloc(nsamples * sizeof(short));
+
+	AudioPortDevice_i::init_pcm_playback(
+			&tone_handle,
+			audio_device->output_device_name.c_str(),
+			&sample_rate,
+			SND_PCM_FORMAT_S16_LE);
+
+	delta_phase = 2*M_PI*simple.frequencyInHz/sample_rate;
+	for(int i = 0; i < nsamples; i++){
+		phase += delta_phase;
+		buffer[i] = 2000*cosf(phase);
+	}
+
+	pthread_mutex_lock(&lock);
+	while(status){
+		pthread_mutex_unlock(&lock);
+
+		if (snd_pcm_prepare(tone_handle) < 0) {
+			free(buffer);
+			snd_pcm_close(tone_handle);
+			LOG_ERROR(AudioPortDevice_i, "Could not start tone");
+			return;
+		}
+
+		AudioPortDevice_i::writeBuffer(tone_handle, buffer, nsamples, sizeof(short));
+		snd_pcm_drain(tone_handle);
+
+		if(!simple.repeatIntervalInMs){
+			break;
+		}
+
+		usleep((simple.repeatIntervalInMs-simple.durationPerBurstInMs)*1e3);
+
+		pthread_mutex_lock(&lock);
+	}
+	status = false; // ensure status false
+	pthread_mutex_unlock(&lock);
+
+	free(buffer);
+	snd_pcm_close(tone_handle);
+}
+
+void ToneControl::complex_tone_thread(){
+	//TODO
+}
+
 AudioPortDevice_i::AudioPortDevice_i(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
     AudioPortDevice_base(devMgr_ior, id, lbl, sftwrPrfl)
 {
@@ -194,7 +291,7 @@ void AudioPortDevice_i::stop() throw (CORBA::SystemException, CF::Resource::Stop
 	pthread_cancel(ptt_thread);
 	pthread_join(ptt_thread, NULL);
 
-	LOG_INFO(AudioPortDevice_i, "ptt thread stopped");
+	LOG_DEBUG(AudioPortDevice_i, "ptt thread stopped");
 
 	AudioPortDevice_base::stop();
 }

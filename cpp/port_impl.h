@@ -23,20 +23,23 @@ class AudioPortDevice_i;
 // ----------------------------------------------------------------------------------------
 class Audio_AudibleAlertsAndAlarms_In_i : public POA_Audio::AudibleAlertsAndAlarms, public Port_Provides_base_impl
 {
+
     public:
         Audio_AudibleAlertsAndAlarms_In_i(std::string port_name, AudioPortDevice_base *_parent);
         ~Audio_AudibleAlertsAndAlarms_In_i();
 
         CORBA::UShort createTone(const Audio::AudibleAlertsAndAlarms::ToneProfileType& toneProfile) throw (Audio::AudibleAlertsAndAlarms::InvalidToneProfile);
-        void startTone(CORBA::UShort toneId);
-        void stopTone(CORBA::UShort toneId);
-        void destroyTone(CORBA::UShort toneId);
+        void startTone(CORBA::UShort toneId) throw (Audio::AudibleAlertsAndAlarms::InvalidToneId);
+        void stopTone(CORBA::UShort toneId) throw (Audio::AudibleAlertsAndAlarms::InvalidToneId);
+        void destroyTone(CORBA::UShort toneId) throw (Audio::AudibleAlertsAndAlarms::InvalidToneId);
         void stopAllTones();
         std::string getRepid() const;
 
     protected:
         AudioPortDevice_i *parent;
         boost::mutex portAccess;
+
+        std::map<CORBA::UShort, ToneControl*> tone_map;
 
 };
 // ----------------------------------------------------------------------------------------

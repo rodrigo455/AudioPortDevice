@@ -20,22 +20,53 @@
 #define MIN_PAYLOAD_SIZE_H 		512
 #define MIN_OVERRIDE_TIMEOUT_H 	50
 
+#define TONE_SAMPLE_RATE 8000
+
 struct StreamControl{
 	snd_pcm_t *pcm_handle;
 	Packet::SeqNum seq_number;
 };
 
-struct ToneControl {
-	bool status;
-	pthread_mutex_t lock;
-	pthread_t thread;
-	Audio::AudibleAlertsAndAlarms::ToneProfileType profile;
+class ToneControl{
+
+	public:
+		ToneControl(Audio::AudibleAlertsAndAlarms::ToneProfileType profile, AudioPortDevice_i* dev);
+		~ToneControl();
+
+		void start();
+		void stop();
+
+		CORBA::ULong getNumSamples();
+
+	private:
+
+		AudioPortDevice_i *audio_device;
+		bool status;
+		pthread_mutex_t lock;
+		pthread_t thread;
+		Audio::AudibleAlertsAndAlarms::ToneProfileType profile;
+
+		void simple_tone_thread();
+		static void *simple_tone_thread_helper(void *context)
+		{
+			((ToneControl *)context)->simple_tone_thread();
+			return NULL;
+		}
+
+		void complex_tone_thread();
+		static void *complex_tone_thread_helper(void *context)
+		{
+			((ToneControl *)context)->complex_tone_thread();
+			return NULL;
+		}
+
 };
 
 class AudioPortDevice_i : public AudioPortDevice_base
 {
     ENABLE_LOGGING
 
+	friend class ToneControl;
 	friend class Audio_AudibleAlertsAndAlarms_In_i;
 	friend class Audio_SampleStreamControl_In_i;
 	friend class Audio_SampleStream_In_i;
