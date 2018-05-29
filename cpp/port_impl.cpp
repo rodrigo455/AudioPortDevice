@@ -40,15 +40,15 @@ CORBA::UShort Audio_AudibleAlertsAndAlarms_In_i::createTone(const Audio::Audible
     	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = toneProfile.simpleTone();
 
     	if(simple.frequencyInHz > 4000 && simple.frequencyInHz < 50){
-    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "frequencyInHz out of range [50,4000]");
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(true, false, "frequencyInHz out of range [50,4000]");
     	}
 
     	if(!simple.durationPerBurstInMs){
-    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "durationPerBurstInMs out of range [1,65535]");
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(true, false, "durationPerBurstInMs out of range [1,65535]");
     	}
 
     	if(simple.repeatIntervalInMs && simple.repeatIntervalInMs < simple.durationPerBurstInMs){
-    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "repeatIntervalInMs must be 0 or greater than durationPerBurstInMs");
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(true, false, "repeatIntervalInMs must be 0 or greater than durationPerBurstInMs");
     	}
 
     }else{
@@ -60,7 +60,7 @@ CORBA::UShort Audio_AudibleAlertsAndAlarms_In_i::createTone(const Audio::Audible
     	}
 
     	if((sample_counter + complex.toneSamples.length()) > 196608){
-    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, false, "Cannot store more than 196608 samples");
+    		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(false, true, "Cannot store more than 196608 samples");
     	}
     }
 

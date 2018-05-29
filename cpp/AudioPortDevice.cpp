@@ -51,17 +51,19 @@ CORBA::ULong ToneControl::getNumSamples(){
 
 void ToneControl::simple_tone_thread(){
 
-	snd_pcm_t *tone_handle;
-	unsigned int sample_rate = TONE_SAMPLE_RATE;
 	short *buffer;
+	CORBA::UShort sleep_interval;
 	int nsamples;
+	unsigned int sample_rate = TONE_SAMPLE_RATE;
 	float phase = 0;
 	float delta_phase = 0;
+	snd_pcm_t *tone_handle;
 
 	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = profile.simpleTone();
 
 	nsamples = simple.durationPerBurstInMs* (sample_rate/1e3);
 	buffer = (short*)malloc(nsamples * sizeof(short));
+	sleep_interval = simple.repeatIntervalInMs-simple.durationPerBurstInMs;
 
 	AudioPortDevice_i::init_pcm_playback(
 			&tone_handle,
@@ -75,9 +77,34 @@ void ToneControl::simple_tone_thread(){
 		buffer[i] = 2000*cosf(phase);
 	}
 
-	pthread_mutex_lock(&lock);
-	while(status){
+	if(sleep_interval){
+
+		pthread_mutex_lock(&lock);
+		while(status){
+			pthread_mutex_unlock(&lock);
+
+			if (snd_pcm_prepare(tone_handle) < 0) {
+				free(buffer);
+				snd_pcm_close(tone_handle);
+				LOG_ERROR(AudioPortDevice_i, "Could not start tone");
+				return;
+			}
+
+			AudioPortDevice_i::writeBuffer(tone_handle, buffer, nsamples, sizeof(short));
+			snd_pcm_drain(tone_handle);
+
+			if(!simple.repeatIntervalInMs){
+				break;
+			}
+
+			usleep(sleep_interval*1e3);
+
+			pthread_mutex_lock(&lock);
+		}
+		status = false; // ensure status false
 		pthread_mutex_unlock(&lock);
+
+	}else{
 
 		if (snd_pcm_prepare(tone_handle) < 0) {
 			free(buffer);
@@ -86,22 +113,22 @@ void ToneControl::simple_tone_thread(){
 			return;
 		}
 
-		AudioPortDevice_i::writeBuffer(tone_handle, buffer, nsamples, sizeof(short));
-		snd_pcm_drain(tone_handle);
-
-		if(!simple.repeatIntervalInMs){
-			break;
-		}
-
-		usleep((simple.repeatIntervalInMs-simple.durationPerBurstInMs)*1e3);
-
 		pthread_mutex_lock(&lock);
-	}
-	status = false; // ensure status false
-	pthread_mutex_unlock(&lock);
+		while(status){
+			pthread_mutex_unlock(&lock);
 
-	free(buffer);
+			AudioPortDevice_i::writeBuffer(tone_handle, buffer, nsamples, sizeof(short));
+
+			pthread_mutex_lock(&lock);
+		}
+		status = false; // ensure status false
+		pthread_mutex_unlock(&lock);
+
+		snd_pcm_drain(tone_handle);
+	}
+
 	snd_pcm_close(tone_handle);
+	free(buffer);
 }
 
 void ToneControl::complex_tone_thread(){
