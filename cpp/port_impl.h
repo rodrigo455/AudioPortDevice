@@ -10,6 +10,9 @@
 #include <utility>
 #include <ossie/CF/QueryablePort.h>
 
+struct StreamControl;
+struct ToneControl;
+
 class AudioPortDevice_base;
 class AudioPortDevice_i;
 
@@ -74,6 +77,8 @@ class Audio_SampleStream_In_i : public POA_Audio::SampleStream, public Port_Prov
     protected:
         AudioPortDevice_i *parent;
         boost::mutex portAccess;
+
+        std::map<Packet::Stream, StreamControl> stream_map;
 };
 // ----------------------------------------------------------------------------------------
 // Audio_SampleMessageControl_In_i declaration

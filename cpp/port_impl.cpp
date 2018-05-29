@@ -227,24 +227,53 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 	int err;
     boost::mutex::scoped_lock lock(portAccess);
 
-    if(control.sequenceNumber == 0){
-    	if ((err = snd_pcm_prepare(parent->rx_handle)) < 0) {
+    std::map<Packet::Stream, StreamControl>::iterator it;
+
+    it = stream_map.find(control.streamId);
+    if(it == stream_map.end()){
+    	// create new stream if new streamId is received
+    	std::pair<Packet::Stream, StreamControl> new_stream;
+    	new_stream.first = control.streamId;
+    	new_stream.second.seq_number = control.sequenceNumber; // should be zero
+
+    	if(stream_map.empty()){
+			pthread_mutex_lock(&parent->rx_lock);
+			parent->rx_active = true;
+			pthread_mutex_unlock(&parent->rx_lock);
+		}
+
+    	AudioPortDevice_i::init_pcm_playback(
+    			&new_stream.second.pcm_handle,
+				parent->output_device_name.c_str(),
+				&parent->sample_rate,
+				SND_PCM_FORMAT_U16_LE);
+    	it = stream_map.insert(it, new_stream);
+
+		if ((err = snd_pcm_prepare(it->second.pcm_handle)) < 0) {
 			LOG_ERROR(AudioPortDevice_i, "cannot prepare audio interface for use ("<< snd_strerror(err)<<")");
 			return;
 		}
-
-    	pthread_mutex_lock(&parent->rx_lock);
-    	parent->rx_active = true;
-    	pthread_mutex_unlock(&parent->rx_lock);
     }
 
-    parent->writeBuffer(parent->rx_handle, payload.get_buffer(), payload.length(), sizeof(CORBA::ULong));
+    AudioPortDevice_i::writeBuffer(it->second.pcm_handle, payload.get_buffer(), payload.length(), sizeof(CORBA::ULong));
+
+    if(it->second.seq_number != control.sequenceNumber){
+		LOG_WARN(AudioPortDevice_i, "Sequence Number doesn't match, a packet might be lost");
+	}
+
+    it->second.seq_number++;
 
     if(control.endOfStream){
-    	snd_pcm_drain(parent->rx_handle);
-    	pthread_mutex_lock(&parent->rx_lock);
-    	parent->rx_active = false;
-    	pthread_mutex_unlock(&parent->rx_lock);
+    	// close stream
+    	snd_pcm_drain(it->second.pcm_handle);
+    	snd_pcm_close(it->second.pcm_handle);
+    	stream_map.erase(it);
+
+    	if(stream_map.empty()){
+    		pthread_mutex_lock(&parent->rx_lock);
+			parent->rx_active = false;
+			pthread_mutex_unlock(&parent->rx_lock);
+    	}
     }
 
 }

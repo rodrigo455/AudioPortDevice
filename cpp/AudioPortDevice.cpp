@@ -121,12 +121,6 @@ void AudioPortDevice_i::constructor()
 		output_device_name += ":"+output_card;
 	}
 
-	if(!init_pcm_playback(&rx_handle, output_device_name.c_str(), &sample_rate, format)){
-		throw CF::Device::InvalidState("Cannot initialize output audio device!");
-	}
-
-	//rx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * snd_pcm_format_size(format, 1));
-
 	/* PTT INPUT EVENT DEVICE*/
 
 	ptt_fd = open(ptt_device.c_str(), O_RDONLY);
@@ -216,7 +210,6 @@ void AudioPortDevice_i::releaseObject() throw (CORBA::SystemException, CF::LifeC
 	free(tx_buffer);
 	//free(rx_buffer);
 	snd_pcm_close(tx_handle);
-	snd_pcm_close(rx_handle);
 
 	close(ptt_fd);
 
@@ -357,14 +350,14 @@ int AudioPortDevice_i::writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, i
 			buffer += ret * sizeof_frame;
 
 		}else if (ret == -EAGAIN) {
-			continue;  // try again
-		} else if (ret == -EPIPE) {  // underrun
+			continue;  /* try again */
+		} else if (ret == -EPIPE) {  /* underrun */
 			fputs("U", stderr);
 			if ((ret = snd_pcm_prepare(pcm_handle)) < 0) {
 				LOG_ERROR(AudioPortDevice_i, "snd_pcm_prepare failed. Can't recover from underrun");
 				return ret;
 			}
-			continue;  // try again
+			continue;  /* try again */
 
 		} else if (ret < 0) {
 			LOG_ERROR(AudioPortDevice_i, "snd_pcm_writei failed");
@@ -434,7 +427,7 @@ void AudioPortDevice_i::pttThread()
 		if(event.type == EV_KEY && event.code == KEY_LEFTCTRL){
 
 			if(event.value == EV_RELEASED){
-				LOG_DEBUG(AudioPortDevice_i, "PTT Released");
+				//LOG_DEBUG(AudioPortDevice_i, "PTT Released");
 				pthread_mutex_lock(&tx_lock);
 				tx_active = false;
 				pthread_mutex_unlock(&tx_lock);
@@ -445,7 +438,7 @@ void AudioPortDevice_i::pttThread()
 				}
 
 			}else if(event.value == EV_PRESSED){
-				LOG_DEBUG(AudioPortDevice_i, "PTT Pressed");
+				//LOG_DEBUG(AudioPortDevice_i, "PTT Pressed");
 				pthread_mutex_lock(&tx_lock);
 				tx_active = true;
 				pthread_mutex_unlock(&tx_lock);

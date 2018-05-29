@@ -20,6 +20,11 @@
 #define MIN_PAYLOAD_SIZE_H 		512
 #define MIN_OVERRIDE_TIMEOUT_H 	50
 
+struct StreamControl{
+	snd_pcm_t *pcm_handle;
+	Packet::SeqNum seq_number;
+};
+
 struct ToneControl {
 	bool status;
 	pthread_mutex_t lock;
@@ -69,10 +74,8 @@ class AudioPortDevice_i : public AudioPortDevice_base
         pthread_mutex_t rx_lock;
 
         snd_pcm_t *tx_handle;
-        snd_pcm_t *rx_handle;
 
         char *tx_buffer;
-        //char *rx_buffer;
 
         pthread_t tx_thread;
         Packet::Stream tx_stream;
