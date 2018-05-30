@@ -82,4 +82,57 @@ inline bool operator!= (const sample_stream_in_pktcfg_struct& s1, const sample_s
     return !(s1==s2);
 }
 
+struct sample_stream_out_pktcfg_struct {
+    sample_stream_out_pktcfg_struct ()
+    {
+        payload_size = 320;
+        override_timeout = 23;
+    }
+
+    static std::string getId() {
+        return std::string("sample_stream_out_pktcfg");
+    }
+
+    static const char* getFormat() {
+        return "II";
+    }
+
+    CORBA::ULong payload_size;
+    CORBA::ULong override_timeout;
+};
+
+inline bool operator>>= (const CORBA::Any& a, sample_stream_out_pktcfg_struct& s) {
+    CF::Properties* temp;
+    if (!(a >>= temp)) return false;
+    const redhawk::PropertyMap& props = redhawk::PropertyMap::cast(*temp);
+    if (props.contains("payload_size")) {
+        if (!(props["payload_size"] >>= s.payload_size)) return false;
+    }
+    if (props.contains("override_timeout")) {
+        if (!(props["override_timeout"] >>= s.override_timeout)) return false;
+    }
+    return true;
+}
+
+inline void operator<<= (CORBA::Any& a, const sample_stream_out_pktcfg_struct& s) {
+    redhawk::PropertyMap props;
+ 
+    props["payload_size"] = s.payload_size;
+ 
+    props["override_timeout"] = s.override_timeout;
+    a <<= props;
+}
+
+inline bool operator== (const sample_stream_out_pktcfg_struct& s1, const sample_stream_out_pktcfg_struct& s2) {
+    if (s1.payload_size!=s2.payload_size)
+        return false;
+    if (s1.override_timeout!=s2.override_timeout)
+        return false;
+    return true;
+}
+
+inline bool operator!= (const sample_stream_out_pktcfg_struct& s1, const sample_stream_out_pktcfg_struct& s2) {
+    return !(s1==s2);
+}
+
 #endif // STRUCTPROPS_H

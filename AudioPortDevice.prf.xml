@@ -63,4 +63,13 @@
     </simple>
     <configurationkind kindtype="property"/>
   </struct>
+  <struct id="sample_stream_out_pktcfg" mode="readwrite" name="sample_stream_out_pktcfg">
+    <simple id="payload_size" name="payload_size" type="ulong">
+      <value>320</value>
+    </simple>
+    <simple id="override_timeout" name="override_timeout" type="ulong">
+      <value>23</value>
+    </simple>
+    <configurationkind kindtype="property"/>
+  </struct>
 </properties>

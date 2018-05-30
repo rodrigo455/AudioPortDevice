@@ -53,6 +53,8 @@ class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
         CORBA::ULong volume;
         /// Property: sample_stream_in_pktcfg
         sample_stream_in_pktcfg_struct sample_stream_in_pktcfg;
+        /// Property: sample_stream_out_pktcfg
+        sample_stream_out_pktcfg_struct sample_stream_out_pktcfg;
 
         // Ports
         /// Port: audio_alertalarm_wf_provides_port

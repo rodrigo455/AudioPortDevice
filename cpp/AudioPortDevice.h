@@ -132,8 +132,6 @@ class AudioPortDevice_i : public AudioPortDevice_base
 
         pthread_t tx_thread;
         Packet::Stream tx_stream;
-        CORBA::ULong tx_desired_payload;
-        CORBA::ULong tx_override_timeout;
 
         int ptt_fd;
         pthread_t ptt_thread;

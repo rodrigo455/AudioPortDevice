@@ -22,6 +22,8 @@
 
 #include "AudioPortDevice.h"
 
+//static CORBA::ULong *latency_ptr;
+
 PREPARE_LOGGING(AudioPortDevice_i)
 
 ToneControl::ToneControl(Audio::AudibleAlertsAndAlarms::ToneProfileType profile, AudioPortDevice_i* dev):profile(profile){
@@ -260,9 +262,6 @@ void AudioPortDevice_i::construct(){
 
 	tx_stream = 0;
 
-	tx_desired_payload = 320;
-	tx_override_timeout = 23;
-
 	pthread_mutex_init(&tx_lock, NULL);
 	pthread_mutex_init(&tx_stream_lock, NULL);
 
@@ -274,6 +273,8 @@ void AudioPortDevice_i::constructor()
     /***********************************************************************************
      This is the RH constructor. All properties are properly initialized before this function is called
     ***********************************************************************************/
+
+	//latency_ptr = &latency;
 
 	/* INPUT AUDIO DEVICE */
 
@@ -309,6 +310,18 @@ bool AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *card_name, 
 		LOG_ERROR(AudioPortDevice_i, "cannot open audio device "<<card_name << " ("<< snd_strerror(err)<<")");
 		return false;
 	}
+
+//	if ((err = snd_pcm_set_params(
+//			*pcm_handle,
+//			format,
+//			SND_PCM_ACCESS_RW_INTERLEAVED,
+//			1,
+//			*sample_rate,
+//			1,
+//			*latency_ptr)) < 0) {
+//		LOG_ERROR(AudioPortDevice_i, "cannot set hardware parameters ("<< snd_strerror(err)<<")");
+//		return false;
+//	}
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot allocate hardware parameter structure ("<< snd_strerror(err)<<")");
@@ -359,8 +372,12 @@ void AudioPortDevice_i::start() throw (CORBA::SystemException, CF::Resource::Sta
 
 void AudioPortDevice_i::stop() throw (CORBA::SystemException, CF::Resource::StopError) {
 
+	pthread_mutex_lock(&tx_lock);
+
 	pthread_cancel(ptt_thread);
 	pthread_join(ptt_thread, NULL);
+
+	pthread_mutex_unlock(&tx_lock);
 
 	audio_alertalarm_wf_provides_port->stopAllTones();
 
@@ -455,7 +472,7 @@ void AudioPortDevice_i::txThread(){
 	 BULKIO TEST END TODO: remove this*/
 
 	// fill buffer a bit.. after pcm starts
-	usleep(tx_override_timeout*1e3);
+	usleep(sample_stream_out_pktcfg.override_timeout*1e3);
 
 	pthread_mutex_lock(&tx_lock);
 
@@ -463,7 +480,7 @@ void AudioPortDevice_i::txThread(){
 
 		pthread_mutex_unlock(&tx_lock);
 
-		if((nframes = readBuffer(buf, tx_desired_payload, sizeof_frame)) < 0){
+		if((nframes = readBuffer(buf, sample_stream_out_pktcfg.payload_size, sizeof_frame)) < 0){
 			LOG_ERROR(AudioPortDevice_i, "input buffer cannot be read!");
 			throw CF::Device::InvalidState("input buffer cannot be read!");
 		}
@@ -488,7 +505,7 @@ void AudioPortDevice_i::txThread(){
 
 	// repeat one more time
 
-	if((nframes = readBuffer(buf, tx_desired_payload, sizeof_frame)) < 0){
+	if((nframes = readBuffer(buf, sample_stream_out_pktcfg.payload_size, sizeof_frame)) < 0){
 		LOG_ERROR(AudioPortDevice_i, "input buffer cannot be read!");
 		throw CF::Device::InvalidState("input buffer cannot be read!");
 	}
@@ -528,10 +545,10 @@ int AudioPortDevice_i::writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, i
 			nframes -= ret;
 			buffer += ret * sizeof_frame;
 
-		}else if (ret == -EAGAIN) {
+		}else if (ret == -EAGAIN){
 			continue;  /* try again */
-		} else if (ret == -EPIPE) {  /* underrun */
-			fputs("U", stderr);
+		} else if (ret == -EPIPE){
+			fputs("U", stderr); /* underrun */
 			if ((ret = snd_pcm_prepare(pcm_handle)) < 0) {
 				LOG_ERROR(AudioPortDevice_i, "snd_pcm_prepare failed. Can't recover from underrun");
 				return ret;
@@ -568,20 +585,19 @@ int AudioPortDevice_i::readBuffer(void *vbuffer, int nframes, unsigned sizeof_fr
 			gettimeofday(&end, NULL);
 			timersub(&end, &start, &diff);
 
-			if(diff.tv_usec > tx_override_timeout*1e3){
+			if(diff.tv_usec > sample_stream_out_pktcfg.override_timeout*1e3){
 				break;
 			}
 
 		}else if (ret == -EAGAIN){
-			continue;   // try again
-		}else if (ret == -EPIPE) {  // overrun
-
+			continue; /* try again */
+		}else if (ret == -EPIPE) {  /* overrun */
 			fputs("O", stderr);
 			if ((ret = snd_pcm_prepare(tx_handle)) < 0) {
 				LOG_ERROR(AudioPortDevice_i, "snd_pcm_prepare failed. Can't recover from overrun");
 				return ret;
 			}
-			continue;  // try again
+			continue; /* try again */
 
 		} else if (ret < 0) {
 			LOG_ERROR(AudioPortDevice_i, "snd_pcm_readi failed");
