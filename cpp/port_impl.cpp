@@ -160,9 +160,9 @@ void Audio_SampleStreamControl_In_i::setMaxPayloadSize(CORBA::ULong maxPayloadSi
 
     if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
     	if(maxPayloadSize <= MAX_PAYLOAD_SIZE_H && maxPayloadSize >= 1){
-			parent->sample_stream_out_pktcfg.payload_size = maxPayloadSize;
-			if(parent->sample_stream_out_pktcfg.override_timeout < (maxPayloadSize*1000)/parent->sample_rate){
-				parent->sample_stream_out_pktcfg.override_timeout = (maxPayloadSize*1000)/parent->sample_rate + 5;
+			parent->tx_payload_size = maxPayloadSize;
+			if(parent->tx_override_timeout < (maxPayloadSize*1000)/parent->sample_rate){
+				parent->tx_override_timeout = (maxPayloadSize*1000)/parent->sample_rate + 5;
 			}
 		}else{
 			throw JTRS::InvalidParameter();
@@ -177,7 +177,7 @@ void Audio_SampleStreamControl_In_i::setMinPayloadSize(CORBA::ULong minPayloadSi
     boost::mutex::scoped_lock lock(portAccess);
 
     if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
-    	if(minPayloadSize <= MIN_PAYLOAD_SIZE_H && minPayloadSize >= 0 && minPayloadSize <= parent->sample_stream_out_pktcfg.payload_size){
+    	if(minPayloadSize <= MIN_PAYLOAD_SIZE_H && minPayloadSize >= 0 && minPayloadSize <= parent->tx_payload_size){
 			// Nothing to be done
 		}else{
 			throw JTRS::InvalidParameter();
@@ -193,9 +193,9 @@ void Audio_SampleStreamControl_In_i::setDesiredPayloadSize(CORBA::ULong desiredP
 
     if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
     	if(desiredPayloadSize <= MAX_PAYLOAD_SIZE_H && desiredPayloadSize >= 1){
-			parent->sample_stream_out_pktcfg.payload_size = desiredPayloadSize;
-			if(parent->sample_stream_out_pktcfg.override_timeout < (desiredPayloadSize*1000)/parent->sample_rate){
-				parent->sample_stream_out_pktcfg.override_timeout = (desiredPayloadSize*1000)/parent->sample_rate + 5;
+			parent->tx_payload_size = desiredPayloadSize;
+			if(parent->tx_override_timeout < (desiredPayloadSize*1000)/parent->sample_rate){
+				parent->tx_override_timeout = (desiredPayloadSize*1000)/parent->sample_rate + 5;
 			}
 		}else{
 			throw JTRS::InvalidParameter();
@@ -211,8 +211,8 @@ void Audio_SampleStreamControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverr
 
     if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
     	if(minOverrideTimeout <= MIN_OVERRIDE_TIMEOUT_H
-    			&& minOverrideTimeout >= (parent->sample_stream_out_pktcfg.payload_size*1000)/parent->sample_rate){
-			parent->sample_stream_out_pktcfg.override_timeout = minOverrideTimeout;
+    			&& minOverrideTimeout >= (parent->tx_payload_size*1000)/parent->sample_rate){
+			parent->tx_override_timeout = minOverrideTimeout;
 		}else{
 			throw JTRS::InvalidParameter();
 		}
@@ -247,28 +247,28 @@ CORBA::ULong Audio_SampleStream_In_i::getMaxPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->sample_stream_in_pktcfg.max_payload_size;
+    return parent->rx_max_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMinPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->sample_stream_in_pktcfg.min_payload_size;
+    return parent->rx_min_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getDesiredPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->sample_stream_in_pktcfg.desired_payload_size;
+    return parent->rx_desired_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMinOverrideTimeout()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->sample_stream_in_pktcfg.min_override_timeout;
+    return parent->rx_min_override_timeout;
 }
 
 void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
@@ -291,13 +291,19 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 			pthread_mutex_unlock(&parent->rx_lock);
 		}
 
-    	AudioPortDevice_i::init_pcm(
+    	if(!(parent->rx_desired_payload_size = AudioPortDevice_i::init_pcm(
     			&new_stream.second.pcm_handle,
 				parent->output_device_name.c_str(),
 				SND_PCM_STREAM_PLAYBACK,
 				&parent->sample_rate,
 				SND_PCM_FORMAT_U16_LE,
-				0);
+				0))){
+    		throw CF::Device::InvalidState("Cannot initialize output audio device!");
+    	}else{
+    		parent->rx_max_payload_size = parent->rx_desired_payload_size + 20;
+    		parent->rx_min_payload_size = parent->rx_desired_payload_size - 20;
+    		parent->rx_min_override_timeout = ((parent->rx_desired_payload_size*1000)/parent->sample_rate)+5;
+    	}
 
     	it = stream_map.insert(it, new_stream);
 

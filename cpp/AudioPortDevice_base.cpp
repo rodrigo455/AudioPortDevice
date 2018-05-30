@@ -179,24 +179,6 @@ void AudioPortDevice_base::loadProperties()
                 "external",
                 "property");
 
-    addProperty(sample_stream_in_pktcfg,
-                sample_stream_in_pktcfg_struct(),
-                "sample_stream_in_pktcfg",
-                "sample_stream_in_pktcfg",
-                "readwrite",
-                "",
-                "external",
-                "property");
-
-    addProperty(sample_stream_out_pktcfg,
-                sample_stream_out_pktcfg_struct(),
-                "sample_stream_out_pktcfg",
-                "sample_stream_out_pktcfg",
-                "readwrite",
-                "",
-                "external",
-                "property");
-
 }
 
 

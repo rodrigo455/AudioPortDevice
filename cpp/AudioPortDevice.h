@@ -139,6 +139,14 @@ class AudioPortDevice_i : public AudioPortDevice_base
         std::string input_device_name;
         std::string output_device_name;
 
+        CORBA::ULong tx_override_timeout;
+        CORBA::ULong tx_payload_size;
+
+        CORBA::ULong rx_min_override_timeout;
+		CORBA::ULong rx_max_payload_size;
+		CORBA::ULong rx_min_payload_size;
+		CORBA::ULong rx_desired_payload_size;
+
         void txThread();
         static void *tx_thread_helper(void *context)
 		{
@@ -156,7 +164,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
         	return NULL;
 		}
 
-        static bool init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode);
+        static CORBA::ULong init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode);
 };
 
 #endif // AUDIOPORTDEVICE_I_IMPL_H

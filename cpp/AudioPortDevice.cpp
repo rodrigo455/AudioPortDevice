@@ -262,6 +262,13 @@ void AudioPortDevice_i::construct(){
 
 	tx_stream = 0;
 
+	tx_override_timeout = 23;
+	tx_payload_size = 320;
+	rx_min_override_timeout = 23;
+	rx_max_payload_size = 320;
+	rx_min_payload_size = 320;
+	rx_desired_payload_size = 320;
+
 	pthread_mutex_init(&tx_lock, NULL);
 	pthread_mutex_init(&tx_stream_lock, NULL);
 
@@ -301,46 +308,35 @@ void AudioPortDevice_i::constructor()
 	start();
 }
 
-bool AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode){
+CORBA::ULong AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode){
 
-	int err;
+	int err, dir = 0;
+	unsigned long int period_size;
 	snd_pcm_hw_params_t *hw_params;
 
 	if((err = snd_pcm_open(pcm_handle, card_name, stream, mode)) < 0){
 		LOG_ERROR(AudioPortDevice_i, "cannot open audio device "<<card_name << " ("<< snd_strerror(err)<<")");
-		return false;
+		return 0;
 	}
-
-//	if ((err = snd_pcm_set_params(
-//			*pcm_handle,
-//			format,
-//			SND_PCM_ACCESS_RW_INTERLEAVED,
-//			1,
-//			*sample_rate,
-//			1,
-//			*latency_ptr)) < 0) {
-//		LOG_ERROR(AudioPortDevice_i, "cannot set hardware parameters ("<< snd_strerror(err)<<")");
-//		return false;
-//	}
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot allocate hardware parameter structure ("<< snd_strerror(err)<<")");
-		return false;
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params_any(*pcm_handle, hw_params)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot initialize hardware parameter structure ("<< snd_strerror(err)<<")");
-		return false;
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params_set_access(*pcm_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot set access type ("<< snd_strerror(err)<<")");
-		return false;
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params_set_format(*pcm_handle, hw_params, format)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot set sample format ("<< snd_strerror(err)<<")");
-		return false;
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params_set_rate_near(*pcm_handle, hw_params, sample_rate, 0)) < 0) {
@@ -350,17 +346,22 @@ bool AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *card_name, 
 
 	if ((err = snd_pcm_hw_params_set_channels(*pcm_handle, hw_params, 1)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot set channel count ("<< snd_strerror(err)<<")");
-		return false;
+		return 0;
 	}
 
 	if ((err = snd_pcm_hw_params(*pcm_handle, hw_params)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot set parameters ("<< snd_strerror(err)<<")");
-		return false;
+		return 0;
+	}
+
+	if ((err = snd_pcm_hw_params_get_period_size(hw_params, &period_size, &dir)) < 0) {
+		LOG_ERROR(AudioPortDevice_i, "cannot get period_size ("<< snd_strerror(err)<<")");
+		return 0;
 	}
 
 	snd_pcm_hw_params_free(hw_params);
 
-	return true;
+	return period_size;
 }
 
 void AudioPortDevice_i::start() throw (CORBA::SystemException, CF::Resource::StartError) {
@@ -443,14 +444,21 @@ void AudioPortDevice_i::txThread(){
 
 	pthread_mutex_lock(&tx_stream_lock);
 
-	if(!AudioPortDevice_i::init_pcm(
+	if(!(tx_payload_size = AudioPortDevice_i::init_pcm(
 				&tx_handle,
 				input_device_name.c_str(),
 				SND_PCM_STREAM_CAPTURE,
 				&sample_rate,
 				SND_PCM_FORMAT_U16_LE,
-				SND_PCM_NONBLOCK)){
+				SND_PCM_NONBLOCK))){
 		throw CF::Device::InvalidState("Cannot initialize input audio device!");
+	}else{
+		tx_override_timeout = ((tx_payload_size*1000)/sample_rate)+5;
+	}
+
+	if(audio_sample_stream_uses_port->isActive()){
+		tx_payload_size = audio_sample_stream_uses_port->getDesiredPayloadSize();
+		tx_override_timeout = audio_sample_stream_uses_port->getMinOverrideTimeout();
 	}
 
 	if ((err = snd_pcm_prepare(tx_handle)) < 0) {
@@ -472,7 +480,7 @@ void AudioPortDevice_i::txThread(){
 	 BULKIO TEST END TODO: remove this*/
 
 	// fill buffer a bit.. after pcm starts
-	usleep(sample_stream_out_pktcfg.override_timeout*1e3);
+	usleep(tx_override_timeout*1e3);
 
 	pthread_mutex_lock(&tx_lock);
 
@@ -480,7 +488,7 @@ void AudioPortDevice_i::txThread(){
 
 		pthread_mutex_unlock(&tx_lock);
 
-		if((nframes = readBuffer(buf, sample_stream_out_pktcfg.payload_size, sizeof_frame)) < 0){
+		if((nframes = readBuffer(buf, tx_payload_size, sizeof_frame)) < 0){
 			LOG_ERROR(AudioPortDevice_i, "input buffer cannot be read!");
 			throw CF::Device::InvalidState("input buffer cannot be read!");
 		}
@@ -505,7 +513,7 @@ void AudioPortDevice_i::txThread(){
 
 	// repeat one more time
 
-	if((nframes = readBuffer(buf, sample_stream_out_pktcfg.payload_size, sizeof_frame)) < 0){
+	if((nframes = readBuffer(buf, tx_payload_size, sizeof_frame)) < 0){
 		LOG_ERROR(AudioPortDevice_i, "input buffer cannot be read!");
 		throw CF::Device::InvalidState("input buffer cannot be read!");
 	}
@@ -585,7 +593,7 @@ int AudioPortDevice_i::readBuffer(void *vbuffer, int nframes, unsigned sizeof_fr
 			gettimeofday(&end, NULL);
 			timersub(&end, &start, &diff);
 
-			if(diff.tv_usec > sample_stream_out_pktcfg.override_timeout*1e3){
+			if(diff.tv_usec > tx_override_timeout*1e3){
 				break;
 			}
 
