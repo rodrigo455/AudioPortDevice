@@ -53,7 +53,8 @@ void ToneControl::simple_tone_thread(){
 
 	short *buffer;
 	CORBA::UShort sleep_interval;
-	int nsamples;
+	int nsamples, orig_nsamples;
+	int write_samples = 0;
 	unsigned int sample_rate = TONE_SAMPLE_RATE;
 	float phase = 0;
 	float delta_phase = 0;
@@ -61,9 +62,10 @@ void ToneControl::simple_tone_thread(){
 
 	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = profile.simpleTone();
 
-	nsamples = simple.durationPerBurstInMs* (sample_rate/1e3);
-	buffer = (short*)malloc(nsamples * sizeof(short));
-	sleep_interval = simple.repeatIntervalInMs-simple.durationPerBurstInMs;
+	orig_nsamples = simple.durationPerBurstInMs* (sample_rate/1e3);
+	nsamples = orig_nsamples;
+	buffer = (short*)malloc(TONE_SAMPLE_RATE * sizeof(short));
+	sleep_interval = simple.repeatIntervalInMs - simple.durationPerBurstInMs;
 
 	AudioPortDevice_i::init_pcm_playback(
 			&tone_handle,
@@ -72,7 +74,7 @@ void ToneControl::simple_tone_thread(){
 			SND_PCM_FORMAT_S16_LE);
 
 	delta_phase = 2*M_PI*simple.frequencyInHz/sample_rate;
-	for(int i = 0; i < nsamples; i++){
+	for(int i = 0; i < TONE_SAMPLE_RATE; i++){
 		phase += delta_phase;
 		buffer[i] = 2000*cosf(phase);
 	}
@@ -89,11 +91,30 @@ void ToneControl::simple_tone_thread(){
 				LOG_ERROR(AudioPortDevice_i, "Could not start tone");
 				return;
 			}
+			nsamples = orig_nsamples;
+			write_samples = 0;
 
-			AudioPortDevice_i::writeBuffer(tone_handle, buffer, nsamples, sizeof(short));
+			pthread_mutex_lock(&lock);
+			while(status && write_samples!=nsamples){
+				pthread_mutex_unlock(&lock);
+
+				if(nsamples > TONE_SAMPLE_RATE){
+					write_samples = TONE_SAMPLE_RATE;
+					nsamples -= TONE_SAMPLE_RATE;
+				}else{
+					write_samples = nsamples;
+				}
+
+				AudioPortDevice_i::writeBuffer(tone_handle, buffer, write_samples, sizeof(short));
+
+				pthread_mutex_lock(&lock);
+			}
+			pthread_mutex_unlock(&lock);
+
 			snd_pcm_drain(tone_handle);
 
 			if(!simple.repeatIntervalInMs){
+				pthread_mutex_lock(&lock);
 				break;
 			}
 
@@ -115,11 +136,24 @@ void ToneControl::simple_tone_thread(){
 
 		pthread_mutex_lock(&lock);
 		while(status){
-			pthread_mutex_unlock(&lock);
 
-			AudioPortDevice_i::writeBuffer(tone_handle, buffer, nsamples, sizeof(short));
+			nsamples = orig_nsamples;
+			write_samples = 0;
 
-			pthread_mutex_lock(&lock);
+			while(status && write_samples!=nsamples){
+				pthread_mutex_unlock(&lock);
+
+				if(nsamples > TONE_SAMPLE_RATE){
+					write_samples = TONE_SAMPLE_RATE;
+					nsamples -= TONE_SAMPLE_RATE;
+				}else{
+					write_samples = nsamples;
+				}
+
+				AudioPortDevice_i::writeBuffer(tone_handle, buffer, write_samples, sizeof(short));
+
+				pthread_mutex_lock(&lock);
+			}
 		}
 		status = false; // ensure status false
 		pthread_mutex_unlock(&lock);
@@ -355,6 +389,8 @@ void AudioPortDevice_i::stop() throw (CORBA::SystemException, CF::Resource::Stop
 
 	pthread_cancel(ptt_thread);
 	pthread_join(ptt_thread, NULL);
+
+	audio_alertalarm_wf_provides_port->stopAllTones();
 
 	LOG_DEBUG(AudioPortDevice_i, "ptt thread stopped");
 
