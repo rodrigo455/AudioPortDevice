@@ -46,4 +46,21 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
+  <struct id="sample_stream_in_pktcfg" mode="readwrite" name="sample_stream_in_pktcfg">
+    <description>those configurations are hardware dependent and is passed as properties to be customized</description>
+    <simple id="max_payload_size" name="max_payload_size" type="ulong">
+      <value>320</value>
+    </simple>
+    <simple id="min_payload_size" name="min_payload_size" type="ulong">
+      <value>320</value>
+    </simple>
+    <simple id="desired_payload_size" name="desired_payload_size" type="ulong">
+      <value>320</value>
+    </simple>
+    <simple id="min_override_timeout" name="min_override_timeout" type="ulong">
+      <value>25</value>
+      <units>ms</units>
+    </simple>
+    <configurationkind kindtype="property"/>
+  </struct>
 </properties>

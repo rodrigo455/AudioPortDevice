@@ -1,11 +1,24 @@
-/**************************************************************************
+/*
+ * Author: Rodrigo Rolim Mendes de Alencar <alencar.fmce@imbel.gov.br>
+ *
+ * Copyright 2018 IMBEL/FMCE.
+ *
+ * This is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street,
+ * Boston, MA 02110-1301, USA.
+ */
 
-    This is the device code. This file contains the child class where
-    custom functionality can be added to the device. Custom
-    functionality to the base class can be extended here. Access to
-    the ports can also be done from this class
-
-**************************************************************************/
 
 #include "AudioPortDevice.h"
 
@@ -67,11 +80,13 @@ void ToneControl::simple_tone_thread(){
 	buffer = (short*)malloc(TONE_SAMPLE_RATE * sizeof(short));
 	sleep_interval = simple.repeatIntervalInMs - simple.durationPerBurstInMs;
 
-	AudioPortDevice_i::init_pcm_playback(
+	AudioPortDevice_i::init_pcm(
 			&tone_handle,
 			audio_device->output_device_name.c_str(),
+			SND_PCM_STREAM_PLAYBACK,
 			&sample_rate,
-			SND_PCM_FORMAT_S16_LE);
+			SND_PCM_FORMAT_S16_LE,
+			0);
 
 	delta_phase = 2*M_PI*simple.frequencyInHz/sample_rate;
 	for(int i = 0; i < TONE_SAMPLE_RATE; i++){
@@ -171,11 +186,13 @@ void ToneControl::complex_tone_thread(){
 	const Audio::AudibleAlertsAndAlarms::ComplexToneProfile complex = profile.complexTone();
 	CORBA::UShort repeat = complex.numberOfRepeats;
 
-	AudioPortDevice_i::init_pcm_playback(
+	AudioPortDevice_i::init_pcm(
 			&tone_handle,
 			audio_device->output_device_name.c_str(),
+			SND_PCM_STREAM_PLAYBACK,
 			&sample_rate,
-			SND_PCM_FORMAT_S16_LE);
+			SND_PCM_FORMAT_S16_LE,
+			0);
 
 	if (snd_pcm_prepare(tone_handle) < 0) {
 		snd_pcm_close(tone_handle);
@@ -257,9 +274,6 @@ void AudioPortDevice_i::constructor()
     /***********************************************************************************
      This is the RH constructor. All properties are properly initialized before this function is called
     ***********************************************************************************/
-	int err;
-	snd_pcm_hw_params_t *hw_params;
-	snd_pcm_format_t format = SND_PCM_FORMAT_U16_LE;
 
 	/* INPUT AUDIO DEVICE */
 
@@ -267,49 +281,7 @@ void AudioPortDevice_i::constructor()
 		input_device_name += ":"+input_card;
 	}
 
-	if ((err = snd_pcm_open(&tx_handle, input_device_name.c_str(), SND_PCM_STREAM_CAPTURE, SND_PCM_NONBLOCK)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot open audio device "<<input_device_name << " ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot open input audio device!");
-	}
-
-	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot allocate hardware parameter structure ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot allocate hardware parameter structure!");
-	}
-
-	if ((err = snd_pcm_hw_params_any(tx_handle, hw_params)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot initialize hardware parameter structure ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot initialize hardware parameter structure for input audio device!");
-	}
-
-	if ((err = snd_pcm_hw_params_set_access(tx_handle, hw_params, SND_PCM_ACCESS_RW_INTERLEAVED)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot set access type ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot set access type for input audio device!");
-	}
-
-	if ((err = snd_pcm_hw_params_set_format(tx_handle, hw_params, format)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot set sample format ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot set sample format for input audio device!");
-	}
-
-	if ((err = snd_pcm_hw_params_set_rate_near(tx_handle, hw_params, &sample_rate, 0)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot set sample rate ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot set sample rate for input audio device!");
-	}
-
-	if ((err = snd_pcm_hw_params_set_channels(tx_handle, hw_params, 1)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot set channel count ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot set channel count for input audio device!");
-	}
-
-	if ((err = snd_pcm_hw_params(tx_handle, hw_params)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot set parameters ("<< snd_strerror(err)<<")");
-		throw CF::Device::InvalidState("Cannot set hardware parameters for input audio device!");
-	}
-
-	snd_pcm_hw_params_free(hw_params);
-
-	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * snd_pcm_format_size(format, 1));
+	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * sizeof(CORBA::UShort));
 
 	/* OUTPUT AUDIO DEVICE */
 
@@ -328,12 +300,12 @@ void AudioPortDevice_i::constructor()
 	start();
 }
 
-bool AudioPortDevice_i::init_pcm_playback(snd_pcm_t **pcm_handle, const char *card_name, unsigned int *sample_rate, snd_pcm_format_t format){
+bool AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode){
 
 	int err;
 	snd_pcm_hw_params_t *hw_params;
 
-	if((err = snd_pcm_open(pcm_handle, card_name, SND_PCM_STREAM_PLAYBACK, 0)) < 0){
+	if((err = snd_pcm_open(pcm_handle, card_name, stream, mode)) < 0){
 		LOG_ERROR(AudioPortDevice_i, "cannot open audio device "<<card_name << " ("<< snd_strerror(err)<<")");
 		return false;
 	}
@@ -406,7 +378,6 @@ void AudioPortDevice_i::releaseObject() throw (CORBA::SystemException, CF::LifeC
 	pthread_mutex_destroy(&rx_lock);
 
 	free(tx_buffer);
-	snd_pcm_close(tx_handle);
 
 	close(ptt_fd);
 
@@ -455,6 +426,16 @@ void AudioPortDevice_i::txThread(){
 
 	pthread_mutex_lock(&tx_stream_lock);
 
+	if(!AudioPortDevice_i::init_pcm(
+				&tx_handle,
+				input_device_name.c_str(),
+				SND_PCM_STREAM_CAPTURE,
+				&sample_rate,
+				SND_PCM_FORMAT_U16_LE,
+				SND_PCM_NONBLOCK)){
+		throw CF::Device::InvalidState("Cannot initialize input audio device!");
+	}
+
 	if ((err = snd_pcm_prepare(tx_handle)) < 0) {
 		LOG_ERROR(AudioPortDevice_i, "cannot prepare audio interface for use ("<< snd_strerror(err)<<")");
 		throw CF::Device::InvalidState("Cannot prepare input audio device interface for use!");
@@ -465,13 +446,13 @@ void AudioPortDevice_i::txThread(){
 		throw CF::Device::InvalidState("Cannot start PCM stream input device!");
 	}
 
-	/* BULKIO TEST BEGIN*/
+	/* BULKIO TEST BEGIN
 	BULKIO::StreamSRI sri = BULKIO::StreamSRI();
 	sri.xdelta = 1.0/sample_rate;
 	sri.xunits = BULKIO::UNITS_TIME;
 	sri.streamID = "test";
 	test_input->pushSRI(sri);
-	/* BULKIO TEST END TODO: remove this*/
+	 BULKIO TEST END TODO: remove this*/
 
 	// fill buffer a bit.. after pcm starts
 	usleep(tx_override_timeout*1e3);
@@ -487,11 +468,11 @@ void AudioPortDevice_i::txThread(){
 			throw CF::Device::InvalidState("input buffer cannot be read!");
 		}
 
-		/* BULKIO TEST BEGIN*/
+		/* BULKIO TEST BEGIN
 		if(test_input->isActive()){
 			test_input->pushPacket(buf, nframes, bulkio::time::utils::now(), false, "test");
 		}
-		/* BULKIO TEST END TODO: remove this*/
+		 BULKIO TEST END TODO: remove this*/
 
 		if(audio_sample_stream_uses_port->isActive()){
 			audio_sample_stream_uses_port->pushPacket(
@@ -512,11 +493,11 @@ void AudioPortDevice_i::txThread(){
 		throw CF::Device::InvalidState("input buffer cannot be read!");
 	}
 
-	/* BULKIO TEST BEGIN*/
+	/* BULKIO TEST BEGIN
 	if(test_input->isActive()){
 		test_input->pushPacket(buf, nframes, bulkio::time::utils::now(), true, "test");
 	}
-	/* BULKIO TEST END TODO: remove this*/
+	 BULKIO TEST END TODO: remove this*/
 
 	if(audio_sample_stream_uses_port->isActive()){
 		audio_sample_stream_uses_port->pushPacket(
@@ -527,6 +508,7 @@ void AudioPortDevice_i::txThread(){
 	tx_stream++;
 
 	snd_pcm_drop(tx_handle);
+	snd_pcm_close(tx_handle);
 
 	pthread_mutex_unlock(&tx_stream_lock);
 }

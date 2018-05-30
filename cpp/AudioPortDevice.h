@@ -1,3 +1,24 @@
+/*
+ * Author: Rodrigo Rolim Mendes de Alencar <alencar.fmce@imbel.gov.br>
+ *
+ * Copyright 2018 IMBEL/FMCE.
+ *
+ * This is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street,
+ * Boston, MA 02110-1301, USA.
+ */
+
 #ifndef AUDIOPORTDEVICE_I_IMPL_H
 #define AUDIOPORTDEVICE_I_IMPL_H
 
@@ -137,7 +158,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
         	return NULL;
 		}
 
-        static bool init_pcm_playback(snd_pcm_t **pcm_handle, const char *card_name, unsigned int *sample_rate, snd_pcm_format_t format);
+        static bool init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode);
 };
 
 #endif // AUDIOPORTDEVICE_I_IMPL_H

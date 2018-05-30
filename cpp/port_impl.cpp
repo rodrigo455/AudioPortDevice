@@ -1,10 +1,23 @@
-/*******************************************************************************************
-
-    AUTO-GENERATED CODE. DO NOT MODIFY
-
-    Source: AudioPortDevice.spd.xml
-
-*******************************************************************************************/
+/*
+ * Author: Rodrigo Rolim Mendes de Alencar <alencar.fmce@imbel.gov.br>
+ *
+ * Copyright 2018 IMBEL/FMCE.
+ *
+ * This is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3, or (at your option)
+ * any later version.
+ *
+ * This software is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this software; see the file COPYING.  If not, write to
+ * the Free Software Foundation, Inc., 51 Franklin Street,
+ * Boston, MA 02110-1301, USA.
+ */
 
 #include "AudioPortDevice.h"
 
@@ -233,37 +246,29 @@ Audio_SampleStream_In_i::~Audio_SampleStream_In_i()
 CORBA::ULong Audio_SampleStream_In_i::getMaxPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
-    CORBA::ULong retval = 0;
-    // TODO: Fill in this function
     // This should be tuned according to the hardware
-    return retval;
+    return parent->sample_stream_in_pktcfg.max_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMinPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
-    CORBA::ULong retval = 0;
-    // TODO: Fill in this function
     // This should be tuned according to the hardware
-    return retval;
+    return parent->sample_stream_in_pktcfg.min_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getDesiredPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
-    CORBA::ULong retval = 0;
-    // TODO: Fill in this function
     // This should be tuned according to the hardware
-    return retval;
+    return parent->sample_stream_in_pktcfg.desired_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMinOverrideTimeout()
 {
     boost::mutex::scoped_lock lock(portAccess);
-    CORBA::ULong retval = 0;
-    // TODO: Fill in this function
     // This should be tuned according to the hardware
-    return retval;
+    return parent->sample_stream_in_pktcfg.min_override_timeout;
 }
 
 void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
@@ -286,11 +291,14 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 			pthread_mutex_unlock(&parent->rx_lock);
 		}
 
-    	AudioPortDevice_i::init_pcm_playback(
+    	AudioPortDevice_i::init_pcm(
     			&new_stream.second.pcm_handle,
 				parent->output_device_name.c_str(),
+				SND_PCM_STREAM_PLAYBACK,
 				&parent->sample_rate,
-				SND_PCM_FORMAT_U16_LE);
+				SND_PCM_FORMAT_U16_LE,
+				SND_PCM_NONBLOCK);
+
     	it = stream_map.insert(it, new_stream);
 
 		if ((err = snd_pcm_prepare(it->second.pcm_handle)) < 0) {

@@ -25,8 +25,8 @@ Requires:       redhawk >= 2.1
 
 
 # Interface requirements
-BuildRequires:  audioInterfaces packetInterfaces devmsgctlInterfaces bulkioInterfaces >= 2.1
-Requires:       audioInterfaces packetInterfaces devmsgctlInterfaces bulkioInterfaces >= 2.1
+BuildRequires:  audioInterfaces packetInterfaces devmsgctlInterfaces
+Requires:       audioInterfaces packetInterfaces devmsgctlInterfaces
 
 
 %description
