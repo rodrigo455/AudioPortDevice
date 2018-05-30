@@ -231,6 +231,11 @@ Audio_SampleStream_In_i::Audio_SampleStream_In_i(std::string port_name, AudioPor
 Port_Provides_base_impl(port_name)
 {
     parent = static_cast<AudioPortDevice_i *> (_parent);
+
+    rx_min_override_timeout = 23;
+	rx_max_payload_size = 320;
+	rx_min_payload_size = 320;
+	rx_desired_payload_size = 320;
 }
 
 Audio_SampleStream_In_i::~Audio_SampleStream_In_i()
@@ -247,28 +252,28 @@ CORBA::ULong Audio_SampleStream_In_i::getMaxPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->rx_max_payload_size;
+    return rx_max_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMinPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->rx_min_payload_size;
+    return rx_min_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getDesiredPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->rx_desired_payload_size;
+    return rx_desired_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMinOverrideTimeout()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return parent->rx_min_override_timeout;
+    return rx_min_override_timeout;
 }
 
 void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
@@ -291,7 +296,7 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 			pthread_mutex_unlock(&parent->rx_lock);
 		}
 
-    	if(!(parent->rx_desired_payload_size = AudioPortDevice_i::init_pcm(
+    	if(!(rx_desired_payload_size = AudioPortDevice_i::init_pcm(
     			&new_stream.second.pcm_handle,
 				parent->output_device_name.c_str(),
 				SND_PCM_STREAM_PLAYBACK,
@@ -300,10 +305,17 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 				0))){
     		throw CF::Device::InvalidState("Cannot initialize output audio device!");
     	}else{
-    		parent->rx_max_payload_size = parent->rx_desired_payload_size + 20;
-    		parent->rx_min_payload_size = parent->rx_desired_payload_size - 20;
-    		parent->rx_min_override_timeout = ((parent->rx_desired_payload_size*1000)/parent->sample_rate)+5;
+    		rx_max_payload_size = rx_desired_payload_size + 20;
+    		rx_min_payload_size = rx_desired_payload_size - 20;
+    		rx_min_override_timeout = ((rx_desired_payload_size*1000)/parent->sample_rate)+5;
     	}
+
+//    	if(parent->audio_sample_stream_ctrl_uses_port->isActive()){
+//    		parent->audio_sample_stream_ctrl_uses_port->setDesiredPayloadSize(rx_desired_payload_size);
+//    		parent->audio_sample_stream_ctrl_uses_port->setMaxPayloadSize(rx_max_payload_size);
+//    		parent->audio_sample_stream_ctrl_uses_port->setMinPayloadSize(rx_desired_payload_size);
+//    		parent->audio_sample_stream_ctrl_uses_port->setMinOverrideTimeout(rx_min_override_timeout);
+//    	}
 
     	it = stream_map.insert(it, new_stream);
 

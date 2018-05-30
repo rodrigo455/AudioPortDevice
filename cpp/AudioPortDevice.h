@@ -142,11 +142,6 @@ class AudioPortDevice_i : public AudioPortDevice_base
         CORBA::ULong tx_override_timeout;
         CORBA::ULong tx_payload_size;
 
-        CORBA::ULong rx_min_override_timeout;
-		CORBA::ULong rx_max_payload_size;
-		CORBA::ULong rx_min_payload_size;
-		CORBA::ULong rx_desired_payload_size;
-
         void txThread();
         static void *tx_thread_helper(void *context)
 		{

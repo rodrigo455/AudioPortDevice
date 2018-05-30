@@ -264,10 +264,6 @@ void AudioPortDevice_i::construct(){
 
 	tx_override_timeout = 23;
 	tx_payload_size = 320;
-	rx_min_override_timeout = 23;
-	rx_max_payload_size = 320;
-	rx_min_payload_size = 320;
-	rx_desired_payload_size = 320;
 
 	pthread_mutex_init(&tx_lock, NULL);
 	pthread_mutex_init(&tx_stream_lock, NULL);
