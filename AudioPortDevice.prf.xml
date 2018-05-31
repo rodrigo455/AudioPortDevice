@@ -25,7 +25,6 @@
     <action type="external"/>
   </simple>
   <simple id="capture_card" mode="readonly" name="capture_card" type="string" commandline="true">
-    <description>Name of the input ALSA CARD</description>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
@@ -41,7 +40,6 @@
     <action type="external"/>
   </simple>
   <simple id="playback_card" mode="readonly" name="playback_card" type="string" commandline="true">
-    <description>Name of the output ALSA CARD</description>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
