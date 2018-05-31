@@ -249,9 +249,7 @@ AudioPortDevice_i::~AudioPortDevice_i()
 }
 
 void AudioPortDevice_i::construct(){
-	// To get card names run the command:
-	// aplay -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
-	// arecord -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
+
 	input_device_name = "plughw";
 	output_device_name = "plug:dmix";
 
