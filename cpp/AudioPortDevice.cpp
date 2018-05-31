@@ -66,7 +66,7 @@ void ToneControl::simple_tone_thread(){
 
 	short *buffer;
 	CORBA::UShort sleep_interval;
-	int nsamples, orig_nsamples;
+	int nsamples, orig_nsamples, buffersize;
 	int write_samples = 0;
 	unsigned int sample_rate = TONE_SAMPLE_RATE;
 	float phase = 0;
@@ -77,7 +77,8 @@ void ToneControl::simple_tone_thread(){
 
 	orig_nsamples = simple.durationPerBurstInMs* (sample_rate/1e3);
 	nsamples = orig_nsamples;
-	buffer = (short*)malloc(TONE_SAMPLE_RATE * sizeof(short));
+	buffersize = (orig_nsamples>TONE_SAMPLE_RATE)? TONE_SAMPLE_RATE:orig_nsamples;
+	buffer = (short*)malloc(buffersize * sizeof(short));
 	sleep_interval = simple.repeatIntervalInMs - simple.durationPerBurstInMs;
 
 	AudioPortDevice_i::init_pcm(
@@ -89,7 +90,7 @@ void ToneControl::simple_tone_thread(){
 			0);
 
 	delta_phase = 2*M_PI*simple.frequencyInHz/sample_rate;
-	for(int i = 0; i < TONE_SAMPLE_RATE; i++){
+	for(int i = 0; i < buffersize; i++){
 		phase += delta_phase;
 		buffer[i] = 2000*cosf(phase);
 	}
@@ -277,17 +278,23 @@ void AudioPortDevice_i::constructor()
 
 	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * sizeof(CORBA::UShort));
 
-	if(!input_card.empty())
-		input_device_name += ":"+input_card;
+	if(!capture_card.empty())
+		input_device_name += ":"+capture_card;
 
-	if(!output_card.empty())
-		output_device_name += ":"+output_card;
+	if(!playback_card.empty())
+		output_device_name += ":"+playback_card;
 
 	ptt_fd = open(ptt_device.c_str(), O_RDONLY);
 	if(ptt_fd < 0){
 		LOG_ERROR(AudioPortDevice_i, "ptt_device ("<<ptt_device<<") could not be opened " << ptt_fd);
 		throw CF::Device::InvalidState("Cannot open ptt input event device!");
 	}
+
+	playbackVolumeChanged(0,playback_volume);
+	captureVolumeChanged(0,capture_volume);
+
+	addPropertyListener(playback_volume, this, &AudioPortDevice_i::playbackVolumeChanged);
+	addPropertyListener(capture_volume, this, &AudioPortDevice_i::captureVolumeChanged);
 
 	start();
 }
@@ -668,5 +675,73 @@ void AudioPortDevice_i::pttThread()
 			}
 		}
 	}
+}
+
+void AudioPortDevice_i::captureVolumeChanged(CORBA::ULong old_value, CORBA::ULong new_value){
+
+	int err;
+	long min, max;
+	snd_mixer_t *handle;
+	snd_mixer_selem_id_t *sid;
+
+	snd_mixer_open(&handle, 0);
+	err = snd_mixer_attach(handle, capture_card.empty()? "default":("hw:"+capture_card).c_str());
+
+	if(err<0){
+		LOG_ERROR(AudioPortDevice_i, "Could not attach capture device to mixer handle");
+		snd_mixer_close(handle);
+		return;
+	}
+
+	snd_mixer_selem_register(handle, NULL, NULL);
+	snd_mixer_load(handle);
+
+	snd_mixer_selem_id_alloca(&sid);
+	snd_mixer_selem_id_set_index(sid, 0);
+	snd_mixer_selem_id_set_name(sid, capture_mixer_control.empty()? "Capture":capture_mixer_control.c_str());
+	snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+
+	if(!elem){
+		LOG_ERROR(AudioPortDevice_i, "Could not find mixer control for capture card!");
+	}else{
+		snd_mixer_selem_get_capture_volume_range(elem, &min, &max);
+		snd_mixer_selem_set_capture_volume_all(elem, new_value * max / 100);
+	}
+
+	snd_mixer_close(handle);
+}
+
+void AudioPortDevice_i::playbackVolumeChanged(CORBA::ULong old_value, CORBA::ULong new_value){
+
+	int err;
+	long min, max;
+	snd_mixer_t *handle;
+	snd_mixer_selem_id_t *sid;
+
+	snd_mixer_open(&handle, 0);
+	err = snd_mixer_attach(handle, playback_card.empty()? "default":("hw:"+playback_card).c_str());
+
+	if(err<0){
+		LOG_ERROR(AudioPortDevice_i, "Could not attach playback device to mixer handle");
+		snd_mixer_close(handle);
+		return;
+	}
+
+	snd_mixer_selem_register(handle, NULL, NULL);
+	snd_mixer_load(handle);
+
+	snd_mixer_selem_id_alloca(&sid);
+	snd_mixer_selem_id_set_index(sid, 0);
+	snd_mixer_selem_id_set_name(sid, playback_mixer_control.empty()? "Master":playback_mixer_control.c_str());
+	snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+
+	if(!elem){
+		LOG_ERROR(AudioPortDevice_i, "Could not find mixer control for playback card!");
+	}else{
+		snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
+		snd_mixer_selem_set_playback_volume_all(elem, new_value * max / 100);
+	}
+
+	snd_mixer_close(handle);
 }
 

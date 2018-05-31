@@ -160,6 +160,9 @@ class AudioPortDevice_i : public AudioPortDevice_base
 		}
 
         static CORBA::ULong init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode);
+
+        void captureVolumeChanged(CORBA::ULong old_value, CORBA::ULong new_value);
+        void playbackVolumeChanged(CORBA::ULong old_value, CORBA::ULong new_value);
 };
 
 #endif // AUDIOPORTDEVICE_I_IMPL_H

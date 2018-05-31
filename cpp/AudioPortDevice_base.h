@@ -38,18 +38,22 @@ class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
         std::string device_kind;
         /// Property: device_model
         std::string device_model;
-        /// Property: input_card
-        std::string input_card;
-        /// Property: output_card
-        std::string output_card;
-        /// Property: sample_rate
-        CORBA::ULong sample_rate;
         /// Property: ptt_device
         std::string ptt_device;
-        /// Property: gain
-        CORBA::ULong gain;
-        /// Property: volume
-        CORBA::ULong volume;
+        /// Property: sample_rate
+        CORBA::ULong sample_rate;
+        /// Property: capture_card
+        std::string capture_card;
+        /// Property: capture_volume
+        CORBA::ULong capture_volume;
+        /// Property: capture_mixer_control
+        std::string capture_mixer_control;
+        /// Property: playback_card
+        std::string playback_card;
+        /// Property: playback_volume
+        CORBA::ULong playback_volume;
+        /// Property: playback_mixer_control
+        std::string playback_mixer_control;
 
         // Ports
         /// Port: audio_alertalarm_wf_provides_port

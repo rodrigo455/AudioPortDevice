@@ -13,13 +13,8 @@
     <kind kindtype="allocation"/>
     <action type="eq"/>
   </simple>
-  <simple id="input_card" mode="readonly" name="input_card" type="string" commandline="true">
-    <description>Name of the input ALSA CARD</description>
-    <kind kindtype="property"/>
-    <action type="external"/>
-  </simple>
-  <simple id="output_card" mode="readonly" name="output_card" type="string" commandline="true">
-    <description>Name of the output ALSA CARD</description>
+  <simple id="ptt_device" mode="readonly" name="ptt_device" type="string" commandline="true">
+    <value>/dev/input/event2</value>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
@@ -29,20 +24,35 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="ptt_device" mode="readonly" name="ptt_device" type="string" commandline="true">
-    <value>/dev/input/event2</value>
+  <simple id="capture_card" mode="readonly" name="capture_card" type="string" commandline="true">
+    <description>Name of the input ALSA CARD</description>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="gain" mode="readwrite" name="gain" type="ulong">
+  <simple id="capture_volume" mode="readwrite" name="capture_volume" type="ulong">
     <value>75</value>
+    <units>%</units>
     <range max="100" min="0"/>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="volume" mode="readwrite" name="volume" type="ulong">
+  <simple id="capture_mixer_control" mode="readwrite" name="capture_mixer_control" type="string">
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="playback_card" mode="readonly" name="playback_card" type="string" commandline="true">
+    <description>Name of the output ALSA CARD</description>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="playback_volume" mode="readwrite" name="playback_volume" type="ulong">
     <value>75</value>
+    <units>%</units>
     <range max="100" min="0"/>
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="playback_mixer_control" mode="readwrite" name="playback_mixer_control" type="string">
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>

@@ -127,17 +127,10 @@ void AudioPortDevice_base::loadProperties()
                 "eq",
                 "allocation");
 
-    addProperty(input_card,
-                "input_card",
-                "input_card",
-                "readonly",
-                "",
-                "external",
-                "property");
-
-    addProperty(output_card,
-                "output_card",
-                "output_card",
+    addProperty(ptt_device,
+                "/dev/input/event2",
+                "ptt_device",
+                "ptt_device",
                 "readonly",
                 "",
                 "external",
@@ -152,28 +145,51 @@ void AudioPortDevice_base::loadProperties()
                 "external",
                 "property");
 
-    addProperty(ptt_device,
-                "/dev/input/event2",
-                "ptt_device",
-                "ptt_device",
+    addProperty(capture_card,
+                "capture_card",
+                "capture_card",
                 "readonly",
                 "",
                 "external",
                 "property");
 
-    addProperty(gain,
+    addProperty(capture_volume,
                 75,
-                "gain",
-                "gain",
+                "capture_volume",
+                "capture_volume",
+                "readwrite",
+                "%",
+                "external",
+                "property");
+
+    addProperty(capture_mixer_control,
+                "capture_mixer_control",
+                "capture_mixer_control",
                 "readwrite",
                 "",
                 "external",
                 "property");
 
-    addProperty(volume,
+    addProperty(playback_card,
+                "playback_card",
+                "playback_card",
+                "readonly",
+                "",
+                "external",
+                "property");
+
+    addProperty(playback_volume,
                 75,
-                "volume",
-                "volume",
+                "playback_volume",
+                "playback_volume",
+                "readwrite",
+                "%",
+                "external",
+                "property");
+
+    addProperty(playback_mixer_control,
+                "playback_mixer_control",
+                "playback_mixer_control",
                 "readwrite",
                 "",
                 "external",
