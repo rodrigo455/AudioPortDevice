@@ -305,17 +305,18 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 				0))){
     		throw CF::Device::InvalidState("Cannot initialize output audio device!");
     	}else{
-    		rx_max_payload_size = rx_desired_payload_size + 20;
-    		rx_min_payload_size = rx_desired_payload_size - 20;
+    		rx_max_payload_size = 4*rx_desired_payload_size;
+    		rx_min_payload_size = rx_desired_payload_size;
     		rx_min_override_timeout = ((rx_desired_payload_size*1000)/parent->sample_rate)+5;
     	}
 
-//    	if(parent->audio_sample_stream_ctrl_uses_port->isActive()){
-//    		parent->audio_sample_stream_ctrl_uses_port->setDesiredPayloadSize(rx_desired_payload_size);
-//    		parent->audio_sample_stream_ctrl_uses_port->setMaxPayloadSize(rx_max_payload_size);
-//    		parent->audio_sample_stream_ctrl_uses_port->setMinPayloadSize(rx_desired_payload_size);
-//    		parent->audio_sample_stream_ctrl_uses_port->setMinOverrideTimeout(rx_min_override_timeout);
-//    	}
+    	/* Payload size should not be set while streaming
+    	if(parent->audio_sample_stream_ctrl_uses_port->isActive()){
+    		parent->audio_sample_stream_ctrl_uses_port->setDesiredPayloadSize(rx_desired_payload_size);
+    		parent->audio_sample_stream_ctrl_uses_port->setMaxPayloadSize(rx_max_payload_size);
+    		parent->audio_sample_stream_ctrl_uses_port->setMinPayloadSize(rx_desired_payload_size);
+    		parent->audio_sample_stream_ctrl_uses_port->setMinOverrideTimeout(rx_min_override_timeout);
+    	}*/
 
     	it = stream_map.insert(it, new_stream);
 
@@ -323,9 +324,10 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 			LOG_ERROR(AudioPortDevice_i, "cannot prepare audio interface for use ("<< snd_strerror(err)<<")");
 			return;
 		}
+
     }
 
-    AudioPortDevice_i::writeBuffer(it->second.pcm_handle, payload.get_buffer(), payload.length(), sizeof(CORBA::ULong));
+    AudioPortDevice_i::writeBuffer(it->second.pcm_handle, payload.get_buffer(), payload.length(), sizeof(CORBA::UShort));
 
     if(it->second.seq_number != control.sequenceNumber){
 		LOG_WARN(AudioPortDevice_i, "Sequence Number doesn't match, a packet might be lost");

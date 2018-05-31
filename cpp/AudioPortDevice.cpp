@@ -22,8 +22,6 @@
 
 #include "AudioPortDevice.h"
 
-//static CORBA::ULong *latency_ptr;
-
 PREPARE_LOGGING(AudioPortDevice_i)
 
 ToneControl::ToneControl(Audio::AudibleAlertsAndAlarms::ToneProfileType profile, AudioPortDevice_i* dev):profile(profile){
@@ -277,23 +275,13 @@ void AudioPortDevice_i::constructor()
      This is the RH constructor. All properties are properly initialized before this function is called
     ***********************************************************************************/
 
-	//latency_ptr = &latency;
-
-	/* INPUT AUDIO DEVICE */
-
-	if(!input_card.empty()){
-		input_device_name += ":"+input_card;
-	}
-
 	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * sizeof(CORBA::UShort));
 
-	/* OUTPUT AUDIO DEVICE */
+	if(!input_card.empty())
+		input_device_name += ":"+input_card;
 
-	if(!output_card.empty()){
+	if(!output_card.empty())
 		output_device_name += ":"+output_card;
-	}
-
-	/* PTT INPUT EVENT DEVICE*/
 
 	ptt_fd = open(ptt_device.c_str(), O_RDONLY);
 	if(ptt_fd < 0){
@@ -308,6 +296,7 @@ CORBA::ULong AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *car
 
 	int err, dir = 0;
 	unsigned long int period_size;
+	unsigned int min_nperiods, max_nperiods;
 	snd_pcm_hw_params_t *hw_params;
 
 	if((err = snd_pcm_open(pcm_handle, card_name, stream, mode)) < 0){
@@ -316,7 +305,7 @@ CORBA::ULong AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *car
 	}
 
 	if ((err = snd_pcm_hw_params_malloc(&hw_params)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot allocate hardware parameter structure ("<< snd_strerror(err)<<")");
+		LOG_ERROR(AudioPortDevice_i, "cannot allocate hardware parameters structure ("<< snd_strerror(err)<<")");
 		return 0;
 	}
 
@@ -345,8 +334,11 @@ CORBA::ULong AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *car
 		return 0;
 	}
 
+	snd_pcm_hw_params_get_periods_min(hw_params, &min_nperiods, NULL);
+	snd_pcm_hw_params_get_periods_max(hw_params, &max_nperiods, NULL);
+
 	if ((err = snd_pcm_hw_params(*pcm_handle, hw_params)) < 0) {
-		LOG_ERROR(AudioPortDevice_i, "cannot set parameters ("<< snd_strerror(err)<<")");
+		LOG_ERROR(AudioPortDevice_i, "cannot set hardware parameters ("<< snd_strerror(err)<<")");
 		return 0;
 	}
 
@@ -356,6 +348,33 @@ CORBA::ULong AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *car
 	}
 
 	snd_pcm_hw_params_free(hw_params);
+
+	if(stream == SND_PCM_STREAM_PLAYBACK){
+		snd_pcm_sw_params_t *sw_params;
+
+		if ((err = snd_pcm_sw_params_malloc(&sw_params)) < 0) {
+			LOG_ERROR(AudioPortDevice_i, "cannot allocate software parameters structure ("<< snd_strerror(err)<<")");
+			return 0;
+		}
+
+		if ((err = snd_pcm_sw_params_current(*pcm_handle, sw_params)) < 0) {
+			LOG_ERROR(AudioPortDevice_i, "cannot initialize software parameters structure ("<< snd_strerror(err)<<")");
+			return 0;
+		}
+
+		/* Wait to start until buffer is half way full to avoid audio underruns */
+		if ((err = snd_pcm_sw_params_set_start_threshold(*pcm_handle, sw_params, (min_nperiods+max_nperiods)*period_size/4))){
+			LOG_ERROR(AudioPortDevice_i, "cannot set start threshold ("<< snd_strerror(err)<<")");
+			return 0;
+		}
+
+		if ((err = snd_pcm_sw_params(*pcm_handle, sw_params)) < 0) {
+			LOG_ERROR(AudioPortDevice_i, "cannot set software parameters ("<< snd_strerror(err)<<")");
+			return 0;
+		}
+
+		snd_pcm_sw_params_free(sw_params);
+	}
 
 	return period_size;
 }
