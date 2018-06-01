@@ -11,29 +11,25 @@
 ******************************************************************************************/
 
 AudioPortDevice_base::AudioPortDevice_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl),
-    ThreadedComponent()
+    Device_impl(devMgr_ior, id, lbl, sftwrPrfl)
 {
     construct();
 }
 
 AudioPortDevice_base::AudioPortDevice_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, char *compDev) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, compDev),
-    ThreadedComponent()
+    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, compDev)
 {
     construct();
 }
 
 AudioPortDevice_base::AudioPortDevice_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities),
-    ThreadedComponent()
+    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities)
 {
     construct();
 }
 
 AudioPortDevice_base::AudioPortDevice_base(char *devMgr_ior, char *id, char *lbl, char *sftwrPrfl, CF::Properties capacities, char *compDev) :
-    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev),
-    ThreadedComponent()
+    Device_impl(devMgr_ior, id, lbl, sftwrPrfl, capacities, compDev)
 {
     construct();
 }
@@ -84,15 +80,11 @@ void AudioPortDevice_base::construct()
 void AudioPortDevice_base::start() throw (CORBA::SystemException, CF::Resource::StartError)
 {
     Device_impl::start();
-    ThreadedComponent::startThread();
 }
 
 void AudioPortDevice_base::stop() throw (CORBA::SystemException, CF::Resource::StopError)
 {
     Device_impl::stop();
-    if (!ThreadedComponent::stopThread()) {
-        throw CF::Resource::StopError(CF::CF_NOTSET, "Processing thread did not die");
-    }
 }
 
 void AudioPortDevice_base::releaseObject() throw (CORBA::SystemException, CF::LifeCycle::ReleaseError)

@@ -3,11 +3,10 @@
 
 #include <boost/thread.hpp>
 #include <ossie/Device_impl.h>
-#include <ossie/ThreadedComponent.h>
 
 #include "port_impl.h"
 
-class AudioPortDevice_base : public Device_impl, protected ThreadedComponent
+class AudioPortDevice_base : public Device_impl
 {
     friend class Audio_AudibleAlertsAndAlarms_In_i;
     friend class Audio_SampleStreamControl_In_i;

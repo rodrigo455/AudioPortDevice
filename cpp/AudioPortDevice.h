@@ -106,8 +106,6 @@ class AudioPortDevice_i : public AudioPortDevice_base
         void construct();
         void constructor();
 
-        int serviceFunction();
-
         void releaseObject() throw (CORBA::SystemException, CF::LifeCycle::ReleaseError);
         void start() throw (CF::Resource::StartError, CORBA::SystemException);
 		void stop() throw (CF::Resource::StopError, CORBA::SystemException);

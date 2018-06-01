@@ -450,11 +450,6 @@ void AudioPortDevice_i::updateUsageState()
 	pthread_mutex_unlock(&rx_lock);
 }
 
-int AudioPortDevice_i::serviceFunction()
-{
-    return FINISH;
-}
-
 void AudioPortDevice_i::txThread(){
 
 	CORBA::UShort *buf = (CORBA::UShort *)tx_buffer;
