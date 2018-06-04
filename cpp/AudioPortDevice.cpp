@@ -675,7 +675,7 @@ void AudioPortDevice_i::captureVolumeChanged(CORBA::ULong old_value, CORBA::ULon
 	int err;
 	long min, max;
 	snd_mixer_t *handle;
-	snd_mixer_selem_id_t *sid;
+	snd_mixer_elem_t* elem;
 
 	snd_mixer_open(&handle, 0);
 	err = snd_mixer_attach(handle, capture_card.empty()? "default":("hw:"+capture_card).c_str());
@@ -689,16 +689,34 @@ void AudioPortDevice_i::captureVolumeChanged(CORBA::ULong old_value, CORBA::ULon
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
-	snd_mixer_selem_id_alloca(&sid);
-	snd_mixer_selem_id_set_index(sid, 0);
-	snd_mixer_selem_id_set_name(sid, capture_mixer_control.empty()? "Capture":capture_mixer_control.c_str());
-	snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+	if(capture_mixer_control.empty()){
+		for (elem = snd_mixer_first_elem(handle);
+			 elem;
+			 elem = snd_mixer_elem_next(elem))
+		{
+			if (snd_mixer_selem_is_active(elem) && snd_mixer_selem_has_capture_volume(elem)){
+
+				capture_mixer_control = snd_mixer_selem_get_name(elem);
+				break;
+			}
+		}
+	}else{
+		for (elem = snd_mixer_first_elem(handle);
+			 elem;
+			 elem = snd_mixer_elem_next(elem))
+		{
+			if (snd_mixer_selem_is_active(elem) && snd_mixer_selem_has_capture_volume(elem) &&
+				(capture_mixer_control == snd_mixer_selem_get_name(elem)))
+				break;
+		}
+	}
 
 	if(!elem){
 		LOG_ERROR(AudioPortDevice_i, "Could not find mixer control for capture card!");
+		capture_mixer_control = "";
 	}else{
 		snd_mixer_selem_get_capture_volume_range(elem, &min, &max);
-		snd_mixer_selem_set_capture_volume_all(elem, new_value * max / 100);
+		snd_mixer_selem_set_capture_volume_all(elem, min + new_value*(max-min)/100);
 	}
 
 	snd_mixer_close(handle);
@@ -709,7 +727,7 @@ void AudioPortDevice_i::playbackVolumeChanged(CORBA::ULong old_value, CORBA::ULo
 	int err;
 	long min, max;
 	snd_mixer_t *handle;
-	snd_mixer_selem_id_t *sid;
+	snd_mixer_elem_t* elem;
 
 	snd_mixer_open(&handle, 0);
 	err = snd_mixer_attach(handle, playback_card.empty()? "default":("hw:"+playback_card).c_str());
@@ -723,16 +741,34 @@ void AudioPortDevice_i::playbackVolumeChanged(CORBA::ULong old_value, CORBA::ULo
 	snd_mixer_selem_register(handle, NULL, NULL);
 	snd_mixer_load(handle);
 
-	snd_mixer_selem_id_alloca(&sid);
-	snd_mixer_selem_id_set_index(sid, 0);
-	snd_mixer_selem_id_set_name(sid, playback_mixer_control.empty()? "Master":playback_mixer_control.c_str());
-	snd_mixer_elem_t* elem = snd_mixer_find_selem(handle, sid);
+	if(capture_mixer_control.empty()){
+		for (elem = snd_mixer_first_elem(handle);
+			 elem;
+			 elem = snd_mixer_elem_next(elem))
+		{
+			if (snd_mixer_selem_is_active(elem) && snd_mixer_selem_has_playback_volume(elem)){
+
+				playback_mixer_control = snd_mixer_selem_get_name(elem);
+				break;
+			}
+		}
+	}else{
+		for (elem = snd_mixer_first_elem(handle);
+			 elem;
+			 elem = snd_mixer_elem_next(elem))
+		{
+			if (snd_mixer_selem_is_active(elem) && snd_mixer_selem_has_playback_volume(elem) &&
+				(playback_mixer_control == snd_mixer_selem_get_name(elem)))
+				break;
+		}
+	}
 
 	if(!elem){
 		LOG_ERROR(AudioPortDevice_i, "Could not find mixer control for playback card!");
+		playback_mixer_control = "";
 	}else{
 		snd_mixer_selem_get_playback_volume_range(elem, &min, &max);
-		snd_mixer_selem_set_playback_volume_all(elem, new_value * max / 100);
+		snd_mixer_selem_set_playback_volume_all(elem, min + new_value*(max-min)/100);
 	}
 
 	snd_mixer_close(handle);
