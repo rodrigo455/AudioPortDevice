@@ -24,23 +24,23 @@
         <description>Is provided by the Audio Port Device to control the alert and alarm tones by waveform.</description>
         <porttype type="control"/>
       </provides>
-      <provides repid="IDL:Audio/SampleStreamControl:1.0" providesname="audio_sample_stream_ctrl_provides_port">
+      <provides repid="IDL:Packet/PayloadControl:1.0" providesname="audio_sample_stream_ctrl_provides_port">
         <description>Is provided by the Audio Port Device to set the payload size by the Device User.</description>
         <porttype type="control"/>
       </provides>
-      <provides repid="IDL:Audio/SampleStream:1.0" providesname="audio_sample_stream_provides_port">
+      <provides repid="IDL:Packet/UshortStream:1.0" providesname="audio_sample_stream_provides_port">
         <description>Is provided by the Audio Port Device to consume packets through the pushPacket operation.</description>
         <porttype type="data"/>
       </provides>
-      <uses repid="IDL:Audio/SampleStreamControl:1.0" usesname="audio_sample_stream_ctrl_uses_port">
+      <uses repid="IDL:Packet/PayloadControl:1.0" usesname="audio_sample_stream_ctrl_uses_port">
         <description>is used by the Audio Port Device to set the payload size of the incoming packets from the Device User.</description>
         <porttype type="control"/>
       </uses>
-      <uses repid="IDL:Audio/SampleStream:1.0" usesname="audio_sample_stream_uses_port">
+      <uses repid="IDL:Packet/UshortStream:1.0" usesname="audio_sample_stream_uses_port">
         <description>Is used by the Audio Port Device to push packets to the Device User.</description>
         <porttype type="data"/>
       </uses>
-      <provides repid="IDL:Audio/SampleMessageControl:1.0" providesname="audio_sample_msg_ctrl_provides_port">
+      <provides repid="IDL:DevMsgCtl/DeviceMessageControl:1.0" providesname="audio_sample_msg_ctrl_provides_port">
         <description>Is provided by the Audio Port Device to manage the message flows.</description>
         <porttype type="control"/>
       </provides>
@@ -81,14 +81,5 @@
     </interface>
     <interface name="PayloadStatus" repid="IDL:Packet/PayloadStatus:1.0"/>
     <interface name="DeviceMessageControl" repid="IDL:DevMsgCtl/DeviceMessageControl:1.0"/>
-    <interface name="SampleStreamControl" repid="IDL:Audio/SampleStreamControl:1.0">
-      <inheritsinterface repid="IDL:Packet/PayloadControl:1.0"/>
-    </interface>
-    <interface name="SampleStream" repid="IDL:Audio/SampleStream:1.0">
-      <inheritsinterface repid="IDL:Packet/UshortStream:1.0"/>
-    </interface>
-    <interface name="SampleMessageControl" repid="IDL:Audio/SampleMessageControl:1.0">
-      <inheritsinterface repid="IDL:DevMsgCtl/DeviceMessageControl:1.0"/>
-    </interface>
   </interfaces>
 </softwarecomponent>

@@ -66,7 +66,7 @@ class Audio_AudibleAlertsAndAlarms_In_i : public POA_Audio::AudibleAlertsAndAlar
 // ----------------------------------------------------------------------------------------
 // Audio_SampleStreamControl_In_i declaration
 // ----------------------------------------------------------------------------------------
-class Audio_SampleStreamControl_In_i : public POA_Audio::SampleStreamControl, public Port_Provides_base_impl
+class Audio_SampleStreamControl_In_i : public POA_Packet::PayloadControl, public Port_Provides_base_impl
 {
     public:
         Audio_SampleStreamControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
@@ -85,7 +85,7 @@ class Audio_SampleStreamControl_In_i : public POA_Audio::SampleStreamControl, pu
 // ----------------------------------------------------------------------------------------
 // Audio_SampleStream_In_i declaration
 // ----------------------------------------------------------------------------------------
-class Audio_SampleStream_In_i : public POA_Audio::SampleStream, public Port_Provides_base_impl
+class Audio_SampleStream_In_i : public POA_Packet::UshortStream, public Port_Provides_base_impl
 {
     public:
         Audio_SampleStream_In_i(std::string port_name, AudioPortDevice_base *_parent);
@@ -112,7 +112,7 @@ class Audio_SampleStream_In_i : public POA_Audio::SampleStream, public Port_Prov
 // ----------------------------------------------------------------------------------------
 // Audio_SampleMessageControl_In_i declaration
 // ----------------------------------------------------------------------------------------
-class Audio_SampleMessageControl_In_i : public POA_Audio::SampleMessageControl, public Port_Provides_base_impl
+class Audio_SampleMessageControl_In_i : public POA_DevMsgCtl::DeviceMessageControl, public Port_Provides_base_impl
 {
     public:
         Audio_SampleMessageControl_In_i(std::string port_name, AudioPortDevice_base *_parent);
@@ -225,7 +225,7 @@ class Audio_SampleStreamControl_Out_i : public Port_Uses_base_impl, public POA_E
         void connectPort(CORBA::Object_ptr connection, const char* connectionId)
         {
             boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
-            Audio::SampleStreamControl_var port = Audio::SampleStreamControl::_narrow(connection);
+            Packet::PayloadControl_var port = Packet::PayloadControl::_narrow(connection);
             outConnections.push_back(std::make_pair(port, connectionId));
             active = true;
             recConnectionsRefresh = true;
@@ -249,14 +249,14 @@ class Audio_SampleStreamControl_Out_i : public Port_Uses_base_impl, public POA_E
 
         std::string getRepid () const;
 
-        std::vector< std::pair<Audio::SampleStreamControl_var, std::string> > _getConnections()
+        std::vector< std::pair<Packet::PayloadControl_var, std::string> > _getConnections()
         {
             return outConnections;
         }
 
     protected:
         AudioPortDevice_i *parent;
-        std::vector < std::pair<Audio::SampleStreamControl_var, std::string> > outConnections;
+        std::vector < std::pair<Packet::PayloadControl_var, std::string> > outConnections;
         ExtendedCF::UsesConnectionSequence recConnections;
         bool recConnectionsRefresh;
 };
@@ -294,7 +294,7 @@ class Audio_SampleStream_Out_i : public Port_Uses_base_impl, public POA_Extended
         void connectPort(CORBA::Object_ptr connection, const char* connectionId)
         {
             boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
-            Audio::SampleStream_var port = Audio::SampleStream::_narrow(connection);
+            Packet::UshortStream_var port = Packet::UshortStream::_narrow(connection);
             outConnections.push_back(std::make_pair(port, connectionId));
             active = true;
             recConnectionsRefresh = true;
@@ -318,14 +318,14 @@ class Audio_SampleStream_Out_i : public Port_Uses_base_impl, public POA_Extended
 
         std::string getRepid () const;
 
-        std::vector< std::pair<Audio::SampleStream_var, std::string> > _getConnections()
+        std::vector< std::pair<Packet::UshortStream_var, std::string> > _getConnections()
         {
             return outConnections;
         }
 
     protected:
         AudioPortDevice_i *parent;
-        std::vector < std::pair<Audio::SampleStream_var, std::string> > outConnections;
+        std::vector < std::pair<Packet::UshortStream_var, std::string> > outConnections;
         ExtendedCF::UsesConnectionSequence recConnections;
         bool recConnectionsRefresh;
 };

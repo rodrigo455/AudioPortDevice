@@ -222,7 +222,7 @@ void Audio_SampleStreamControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverr
 
 std::string Audio_SampleStreamControl_In_i::getRepid() const
 {
-    return Audio::SampleStreamControl::_PD_repoId;
+    return Packet::PayloadControl::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
 // Audio_SampleStream_In_i definition
@@ -353,7 +353,7 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
 
 std::string Audio_SampleStream_In_i::getRepid() const
 {
-    return Audio::SampleStream::_PD_repoId;
+    return Packet::UshortStream::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
 // Audio_SampleMessageControl_In_i definition
@@ -404,7 +404,7 @@ void Audio_SampleMessageControl_In_i::abortTx(CORBA::UShort streamId)
 
 std::string Audio_SampleMessageControl_In_i::getRepid() const
 {
-    return Audio::SampleMessageControl::_PD_repoId;
+    return DevMsgCtl::DeviceMessageControl::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
 // Audio_AudioPTT_Signal_Out_i definition
@@ -463,7 +463,7 @@ Audio_SampleStreamControl_Out_i::~Audio_SampleStreamControl_Out_i()
 
 void Audio_SampleStreamControl_Out_i::setMaxPayloadSize(CORBA::ULong maxPayloadSize)
 {
-    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -482,7 +482,7 @@ void Audio_SampleStreamControl_Out_i::setMaxPayloadSize(CORBA::ULong maxPayloadS
 
 void Audio_SampleStreamControl_Out_i::setMinPayloadSize(CORBA::ULong minPayloadSize)
 {
-    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -501,7 +501,7 @@ void Audio_SampleStreamControl_Out_i::setMinPayloadSize(CORBA::ULong minPayloadS
 
 void Audio_SampleStreamControl_Out_i::setDesiredPayloadSize(CORBA::ULong desiredPayloadSize)
 {
-    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -520,7 +520,7 @@ void Audio_SampleStreamControl_Out_i::setDesiredPayloadSize(CORBA::ULong desired
 
 void Audio_SampleStreamControl_Out_i::setMinOverrideTimeout(CORBA::ULong minOverrideTimeout)
 {
-    std::vector < std::pair < Audio::SampleStreamControl_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::PayloadControl_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -539,7 +539,7 @@ void Audio_SampleStreamControl_Out_i::setMinOverrideTimeout(CORBA::ULong minOver
 
 std::string Audio_SampleStreamControl_Out_i::getRepid() const
 {
-    return Audio::SampleStreamControl::_PD_repoId;
+    return Packet::PayloadControl::_PD_repoId;
 }
 // ----------------------------------------------------------------------------------------
 // Audio_SampleStream_Out_i definition
@@ -560,7 +560,7 @@ Audio_SampleStream_Out_i::~Audio_SampleStream_Out_i()
 CORBA::ULong Audio_SampleStream_Out_i::getMaxPayloadSize()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -581,7 +581,7 @@ CORBA::ULong Audio_SampleStream_Out_i::getMaxPayloadSize()
 CORBA::ULong Audio_SampleStream_Out_i::getMinPayloadSize()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -602,7 +602,7 @@ CORBA::ULong Audio_SampleStream_Out_i::getMinPayloadSize()
 CORBA::ULong Audio_SampleStream_Out_i::getDesiredPayloadSize()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -623,7 +623,7 @@ CORBA::ULong Audio_SampleStream_Out_i::getDesiredPayloadSize()
 CORBA::ULong Audio_SampleStream_Out_i::getMinOverrideTimeout()
 {
     CORBA::ULong retval = 0;
-    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -643,7 +643,7 @@ CORBA::ULong Audio_SampleStream_Out_i::getMinOverrideTimeout()
 
 void Audio_SampleStream_Out_i::pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload)
 {
-    std::vector < std::pair < Audio::SampleStream_var, std::string > >::iterator i;
+    std::vector < std::pair < Packet::UshortStream_var, std::string > >::iterator i;
 
     boost::mutex::scoped_lock lock(updatingPortsLock);   // don't want to process while command information is coming in
 
@@ -662,6 +662,6 @@ void Audio_SampleStream_Out_i::pushPacket(const Packet::StreamControlType& contr
 
 std::string Audio_SampleStream_Out_i::getRepid() const
 {
-    return Audio::SampleStream::_PD_repoId;
+    return Packet::UshortStream::_PD_repoId;
 }
 
