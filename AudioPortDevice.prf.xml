@@ -24,7 +24,7 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="capture_card" mode="readonly" name="capture_card" type="string" commandline="true">
+  <simple id="capture_card" mode="readonly" name="capture_card" type="string">
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
@@ -39,7 +39,7 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="playback_card" mode="readonly" name="playback_card" type="string" commandline="true">
+  <simple id="playback_card" mode="readonly" name="playback_card" type="string">
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
