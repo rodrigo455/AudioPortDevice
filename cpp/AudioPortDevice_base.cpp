@@ -128,10 +128,10 @@ void AudioPortDevice_base::loadProperties()
                 "external",
                 "property");
 
-    addProperty(sample_rate,
+    addProperty(capture_sample_rate,
                 16000,
-                "sample_rate",
-                "sample_rate",
+                "capture_sample_rate",
+                "capture_sample_rate",
                 "readwrite",
                 "Hz",
                 "external",
@@ -159,6 +159,15 @@ void AudioPortDevice_base::loadProperties()
                 "capture_mixer_control",
                 "readwrite",
                 "",
+                "external",
+                "property");
+
+    addProperty(playback_sample_rate,
+                16000,
+                "playback_sample_rate",
+                "playback_sample_rate",
+                "readwrite",
+                "Hz",
                 "external",
                 "property");
 

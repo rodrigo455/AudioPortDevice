@@ -161,8 +161,8 @@ void Audio_SampleStreamControl_In_i::setMaxPayloadSize(CORBA::ULong maxPayloadSi
     if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
     	if(maxPayloadSize <= MAX_PAYLOAD_SIZE_H && maxPayloadSize >= 1){
 			parent->tx_payload_size = maxPayloadSize;
-			if(parent->tx_override_timeout < (maxPayloadSize*1000)/parent->sample_rate){
-				parent->tx_override_timeout = (maxPayloadSize*1000)/parent->sample_rate + 5;
+			if(parent->tx_override_timeout < (maxPayloadSize*1000)/parent->capture_sample_rate){
+				parent->tx_override_timeout = (maxPayloadSize*1000)/parent->capture_sample_rate + 5;
 			}
 		}else{
 			throw JTRS::InvalidParameter();
@@ -194,8 +194,8 @@ void Audio_SampleStreamControl_In_i::setDesiredPayloadSize(CORBA::ULong desiredP
     if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
     	if(desiredPayloadSize <= MAX_PAYLOAD_SIZE_H && desiredPayloadSize >= 1){
 			parent->tx_payload_size = desiredPayloadSize;
-			if(parent->tx_override_timeout < (desiredPayloadSize*1000)/parent->sample_rate){
-				parent->tx_override_timeout = (desiredPayloadSize*1000)/parent->sample_rate + 5;
+			if(parent->tx_override_timeout < (desiredPayloadSize*1000)/parent->capture_sample_rate){
+				parent->tx_override_timeout = (desiredPayloadSize*1000)/parent->capture_sample_rate + 5;
 			}
 		}else{
 			throw JTRS::InvalidParameter();
@@ -211,7 +211,7 @@ void Audio_SampleStreamControl_In_i::setMinOverrideTimeout(CORBA::ULong minOverr
 
     if(pthread_mutex_trylock(&parent->tx_stream_lock) == 0){
     	if(minOverrideTimeout <= MIN_OVERRIDE_TIMEOUT_H
-    			&& minOverrideTimeout >= (parent->tx_payload_size*1000)/parent->sample_rate){
+    			&& minOverrideTimeout >= (parent->tx_payload_size*1000)/parent->capture_sample_rate){
 			parent->tx_override_timeout = minOverrideTimeout;
 		}else{
 			throw JTRS::InvalidParameter();
@@ -300,14 +300,14 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
     			&new_stream.second.pcm_handle,
 				parent->output_device_name.c_str(),
 				SND_PCM_STREAM_PLAYBACK,
-				&parent->sample_rate,
+				&parent->playback_sample_rate,
 				SND_PCM_FORMAT_U16_LE,
 				0))){
     		throw CF::Device::InvalidState("Cannot initialize output audio device!");
     	}else{
     		rx_max_payload_size = 4*rx_desired_payload_size;
     		rx_min_payload_size = rx_desired_payload_size;
-    		rx_min_override_timeout = ((rx_desired_payload_size*1000)/parent->sample_rate)+5;
+    		rx_min_override_timeout = ((rx_desired_payload_size*1000)/parent->playback_sample_rate)+5;
     	}
 
     	/* Payload size should not be set while streaming

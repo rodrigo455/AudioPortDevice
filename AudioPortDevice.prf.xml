@@ -18,7 +18,7 @@
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>
-  <simple id="sample_rate" mode="readwrite" name="sample_rate" type="ulong">
+  <simple id="capture_sample_rate" mode="readwrite" name="capture_sample_rate" type="ulong">
     <value>16000</value>
     <units>Hz</units>
     <kind kindtype="property"/>
@@ -36,6 +36,12 @@
     <action type="external"/>
   </simple>
   <simple id="capture_mixer_control" mode="readwrite" name="capture_mixer_control" type="string">
+    <kind kindtype="property"/>
+    <action type="external"/>
+  </simple>
+  <simple id="playback_sample_rate" mode="readwrite" name="playback_sample_rate" type="ulong">
+    <value>16000</value>
+    <units>Hz</units>
     <kind kindtype="property"/>
     <action type="external"/>
   </simple>

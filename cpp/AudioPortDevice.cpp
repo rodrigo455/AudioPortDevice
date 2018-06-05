@@ -463,12 +463,12 @@ void AudioPortDevice_i::txThread(){
 				&tx_handle,
 				input_device_name.c_str(),
 				SND_PCM_STREAM_CAPTURE,
-				&sample_rate,
+				&capture_sample_rate,
 				SND_PCM_FORMAT_U16_LE,
 				SND_PCM_NONBLOCK))){
 		throw CF::Device::InvalidState("Cannot initialize input audio device!");
 	}else{
-		tx_override_timeout = ((tx_payload_size*1000)/sample_rate)+5;
+		tx_override_timeout = ((tx_payload_size*1000)/capture_sample_rate)+5;
 	}
 
 	if(audio_sample_stream_uses_port->isActive()){

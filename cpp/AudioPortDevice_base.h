@@ -3,6 +3,7 @@
 
 #include <boost/thread.hpp>
 #include <ossie/Device_impl.h>
+#include <ossie/ThreadedComponent.h>
 
 #include "port_impl.h"
 
@@ -39,14 +40,16 @@ class AudioPortDevice_base : public Device_impl
         std::string device_model;
         /// Property: ptt_device
         std::string ptt_device;
-        /// Property: sample_rate
-        CORBA::ULong sample_rate;
+        /// Property: capture_sample_rate
+        CORBA::ULong capture_sample_rate;
         /// Property: capture_card
         std::string capture_card;
         /// Property: capture_volume
         CORBA::ULong capture_volume;
         /// Property: capture_mixer_control
         std::string capture_mixer_control;
+        /// Property: playback_sample_rate
+        CORBA::ULong playback_sample_rate;
         /// Property: playback_card
         std::string playback_card;
         /// Property: playback_volume
