@@ -394,12 +394,15 @@ void Audio_SampleMessageControl_In_i::abortTx(CORBA::UShort streamId)
 {
     boost::mutex::scoped_lock lock(portAccess);
 
-    pthread_mutex_lock(&parent->tx_lock);
-    parent->tx_active = false;
-    parent->tx_abort = true;
-	pthread_mutex_unlock(&parent->tx_lock);
-	pthread_join(parent->tx_thread, NULL);
-	parent->tx_abort = false;
+    if(parent->tx_stream == streamId){
+    	pthread_mutex_lock(&parent->tx_lock);
+		parent->tx_active = false;
+		parent->tx_abort = true;
+		pthread_mutex_unlock(&parent->tx_lock);
+		pthread_join(parent->tx_thread, NULL);
+		parent->tx_abort = false;
+    }
+
 }
 
 std::string Audio_SampleMessageControl_In_i::getRepid() const
