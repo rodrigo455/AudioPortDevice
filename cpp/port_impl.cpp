@@ -252,7 +252,7 @@ CORBA::ULong Audio_SampleStream_In_i::getMaxPayloadSize()
 {
     boost::mutex::scoped_lock lock(portAccess);
     // This should be tuned according to the hardware
-    return rx_max_sample_payload_size;
+    return 2*rx_max_sample_payload_size;
 }
 
 CORBA::ULong Audio_SampleStream_In_i::getMinPayloadSize()
@@ -309,14 +309,6 @@ void Audio_SampleStream_In_i::pushPacket(const Packet::StreamControlType& contro
     		rx_min_sample_payload_size = rx_desired_sample_payload_size;
     		rx_min_override_timeout = ((rx_desired_sample_payload_size*1000)/parent->playback_sample_rate)+5;
     	}
-
-    	/* Payload size should not be set while streaming
-    	if(parent->audio_sample_stream_ctrl_uses_port->isActive()){
-    		parent->audio_sample_stream_ctrl_uses_port->setDesiredPayloadSize(rx_desired_payload_size);
-    		parent->audio_sample_stream_ctrl_uses_port->setMaxPayloadSize(rx_max_payload_size);
-    		parent->audio_sample_stream_ctrl_uses_port->setMinPayloadSize(rx_desired_payload_size);
-    		parent->audio_sample_stream_ctrl_uses_port->setMinOverrideTimeout(rx_min_override_timeout);
-    	}*/
 
     	it = stream_map.insert(it, new_stream);
 
