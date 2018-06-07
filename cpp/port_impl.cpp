@@ -52,7 +52,7 @@ CORBA::UShort Audio_AudibleAlertsAndAlarms_In_i::createTone(const Audio::Audible
     if(toneProfile._d() == Audio::AudibleAlertsAndAlarms::SIMPLE_TONE){
     	const Audio::AudibleAlertsAndAlarms::SimpleToneProfile simple = toneProfile.simpleTone();
 
-    	if(simple.frequencyInHz > 4000 && simple.frequencyInHz < 50){
+    	if(simple.frequencyInHz > 4000 || simple.frequencyInHz < 50){
     		throw Audio::AudibleAlertsAndAlarms::InvalidToneProfile(true, false, "frequencyInHz out of range [50,4000]");
     	}
 

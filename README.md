@@ -20,24 +20,21 @@ Note: root privileges (`sudo`) may be required to install.
 ```
 $ usermod -a -G input <userName>
 ```
-- **capture_card** is the name of the alsa device set to stream capture audio samples. You can list the Capture Devices with the command: 
+- **capture_card** is the name of the alsa device set to stream capture audio samples. It has an empty default value that corresponds to the "default" alsa device. You can list the Capture Devices with the command: 
 ```
 	$ arecord -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
 ```
-- **playback_card** is the name of the alsa device set to stream playback audio samples. You can list the Playback Devices with the command:
+- **playback_card** is the name of the alsa device set to stream playback audio samples. It has an empty default value that corresponds to the "default" alsa device. You can list the Playback Devices with the command:
 ```
-$ aplay -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
+	$ aplay -l | awk -F \: '/,/{print $2}' | awk '{print $1}' | uniq
 ```
-- **capture_mixer_control** is the name of alsa mixer control configure by the card driver to adjust volume for the capture device
-- **playback_mixer_control** is the name of alsa mixer control configure by the card driver to adjust volume for the playback device
+- **capture_mixer_control** is the name of alsa mixer control configure by the card driver to adjust volume for the capture device. It has an empty default value that is resolved upon startup as the first mixer control with capture volume capability.
+- **playback_mixer_control** is the name of alsa mixer control configure by the card driver to adjust volume for the playback device. It has an empty default value that is resolved upon startup as the first mixer control with playback volume capability.
 
 You can list all the alsa mixer control with the commands:
 
 ```
-$ amixer controls
 $ amixer scontrols
-$ amixer -Dhw:<card_name> controls
 $ amixer -Dhw:<card_name> scontrols
-$ amixer -c<card_name> controls
 $ amixer -c<card_name> scontrols
 ```
