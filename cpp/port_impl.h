@@ -103,9 +103,9 @@ class Audio_SampleStream_In_i : public POA_Packet::UshortStream, public Port_Pro
         boost::mutex portAccess;
 
         CORBA::ULong rx_min_override_timeout;
-		CORBA::ULong rx_max_payload_size;
-		CORBA::ULong rx_min_payload_size;
-		CORBA::ULong rx_desired_payload_size;
+		CORBA::ULong rx_max_sample_payload_size;
+		CORBA::ULong rx_min_sample_payload_size;
+		CORBA::ULong rx_desired_sample_payload_size;
 
         std::map<Packet::Stream, StreamControl> stream_map;
 };

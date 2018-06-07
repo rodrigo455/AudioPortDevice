@@ -92,7 +92,7 @@ void ToneControl::simple_tone_thread(){
 	delta_phase = 2*M_PI*simple.frequencyInHz/sample_rate;
 	for(int i = 0; i < buffersize; i++){
 		phase += delta_phase;
-		buffer[i] = 2000*cosf(phase);
+		buffer[i] = 2000*sinf(phase);
 	}
 
 	if(sleep_interval){
@@ -260,7 +260,7 @@ void AudioPortDevice_i::construct(){
 	tx_stream = 0;
 
 	tx_override_timeout = 23;
-	tx_payload_size = 320;
+	tx_sample_payload_size = 320;
 
 	pthread_mutex_init(&tx_lock, NULL);
 	pthread_mutex_init(&tx_stream_lock, NULL);
@@ -274,7 +274,7 @@ void AudioPortDevice_i::constructor()
      This is the RH constructor. All properties are properly initialized before this function is called
     ***********************************************************************************/
 
-	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * sizeof(CORBA::UShort));
+	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * sizeof(CORBA::Octet));
 
 	if(!capture_card.empty())
 		input_device_name += ":"+capture_card;
@@ -459,7 +459,7 @@ void AudioPortDevice_i::txThread(){
 
 	pthread_mutex_lock(&tx_stream_lock);
 
-	if(!(tx_payload_size = AudioPortDevice_i::init_pcm(
+	if(!(tx_sample_payload_size = AudioPortDevice_i::init_pcm(
 				&tx_handle,
 				input_device_name.c_str(),
 				SND_PCM_STREAM_CAPTURE,
@@ -468,11 +468,11 @@ void AudioPortDevice_i::txThread(){
 				SND_PCM_NONBLOCK))){
 		throw CF::Device::InvalidState("Cannot initialize input audio device!");
 	}else{
-		tx_override_timeout = ((tx_payload_size*1000)/capture_sample_rate)+5;
+		tx_override_timeout = ((tx_sample_payload_size*1000)/capture_sample_rate)+5;
 	}
 
 	if(audio_sample_stream_uses_port->isActive()){
-		tx_payload_size = audio_sample_stream_uses_port->getDesiredPayloadSize();
+		tx_sample_payload_size = audio_sample_stream_uses_port->getDesiredPayloadSize()/2;
 		tx_override_timeout = audio_sample_stream_uses_port->getMinOverrideTimeout();
 	}
 
@@ -503,7 +503,7 @@ void AudioPortDevice_i::txThread(){
 
 		pthread_mutex_unlock(&tx_lock);
 
-		if((nframes = readBuffer(buf, tx_payload_size, sizeof_frame)) < 0){
+		if((nframes = readBuffer(buf, tx_sample_payload_size, sizeof_frame)) < 0){
 			LOG_ERROR(AudioPortDevice_i, "input buffer cannot be read!");
 			throw CF::Device::InvalidState("input buffer cannot be read!");
 		}
@@ -528,7 +528,7 @@ void AudioPortDevice_i::txThread(){
 
 	// repeat one more time
 
-	if((nframes = readBuffer(buf, tx_payload_size, sizeof_frame)) < 0){
+	if((nframes = readBuffer(buf, tx_sample_payload_size, sizeof_frame)) < 0){
 		LOG_ERROR(AudioPortDevice_i, "input buffer cannot be read!");
 		throw CF::Device::InvalidState("input buffer cannot be read!");
 	}

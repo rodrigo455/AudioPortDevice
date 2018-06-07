@@ -138,7 +138,7 @@ class AudioPortDevice_i : public AudioPortDevice_base
         std::string output_device_name;
 
         CORBA::ULong tx_override_timeout;
-        CORBA::ULong tx_payload_size;
+        CORBA::ULong tx_sample_payload_size;
 
         void txThread();
         static void *tx_thread_helper(void *context)

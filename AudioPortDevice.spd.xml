@@ -3,7 +3,7 @@
 <softpkg id="DCE:c18039d1-aec3-4acd-a17a-07ff6ea69a35" name="AudioPortDevice" type="2.1.2" version="1.3.4">
   <title>Audio Port Device</title>
   <author>
-    <name>null</name>
+    <name>Rodrigo Alencar</name>
   </author>
   <description>The Audio Port Device provides the control of alert and alarm tones, notification of a Push-to-Talk signal and Audio Stream Interfaces</description>
   <propertyfile type="PRF">
