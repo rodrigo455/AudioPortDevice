@@ -347,6 +347,27 @@ std::string Audio_SampleStream_In_i::getRepid() const
 {
     return Packet::UshortStream::_PD_repoId;
 }
+
+void Audio_SampleStream_In_i::initPacketConfig(CORBA::ULong sample_rate){
+
+	snd_pcm_t *pcm_handle;
+
+	if(!(rx_desired_sample_payload_size = AudioPortDevice_i::init_pcm(
+			&pcm_handle,
+			parent->output_device_name.c_str(),
+			SND_PCM_STREAM_PLAYBACK,
+			&sample_rate,
+			SND_PCM_FORMAT_U16_LE,
+			0))){
+		throw CF::Device::InvalidState("Cannot initialize output audio device!");
+	}else{
+		rx_max_sample_payload_size = 4*rx_desired_sample_payload_size;
+		rx_min_sample_payload_size = rx_desired_sample_payload_size;
+		rx_min_override_timeout = ((rx_desired_sample_payload_size*1000)/sample_rate)+5;
+	}
+
+	snd_pcm_close(pcm_handle);
+}
 // ----------------------------------------------------------------------------------------
 // Audio_SampleMessageControl_In_i definition
 // ----------------------------------------------------------------------------------------

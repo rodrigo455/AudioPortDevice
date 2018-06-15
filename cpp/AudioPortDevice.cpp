@@ -250,7 +250,9 @@ AudioPortDevice_i::~AudioPortDevice_i()
 
 void AudioPortDevice_i::construct(){
 
+	/* plughw adjusts sample format and sample rate as required*/
 	input_device_name = "plughw";
+	/* plug:dmix adjusts sample format and sample rate, enabling multiple playback streams */
 	output_device_name = "plug:dmix";
 
 	tx_active = false;
@@ -276,27 +278,52 @@ void AudioPortDevice_i::constructor()
 
 	tx_buffer = (char*)malloc(MAX_PAYLOAD_SIZE_H * sizeof(CORBA::Octet));
 
+	/* Initialize Card Names if they are not empty */
 	if(!capture_card.empty())
 		input_device_name += ":"+capture_card;
 
 	if(!playback_card.empty())
 		output_device_name += ":"+playback_card;
 
+	/* open input event device */
 	ptt_fd = open(ptt_device.c_str(), O_RDONLY);
 	if(ptt_fd < 0){
+		/* you might get this error because of permission issues */
 		LOG_ERROR(AudioPortDevice_i, "ptt_device ("<<ptt_device<<") could not be opened " << ptt_fd);
 		throw CF::Device::InvalidState("Cannot open ptt input event device!");
 	}
 
+	/* Initialize Packet Config for playback device and verify its integrity */
+	audio_sample_stream_provides_port->initPacketConfig(playback_sample_rate);
+
+	/* Initialize Packet Config for capture device and verify its integrity */
+	if(!(tx_sample_payload_size = AudioPortDevice_i::init_pcm(
+				&tx_handle,
+				input_device_name.c_str(),
+				SND_PCM_STREAM_CAPTURE,
+				&capture_sample_rate,
+				SND_PCM_FORMAT_U16_LE,
+				SND_PCM_NONBLOCK))){
+		throw CF::Device::InvalidState("Cannot initialize input audio device!");
+	}else{
+		tx_override_timeout = ((tx_sample_payload_size*1000)/capture_sample_rate)+5;
+	}
+	snd_pcm_close(tx_handle);
+
+	/* Initialize Volume */
 	playbackVolumeChanged(0,playback_volume);
 	captureVolumeChanged(0,capture_volume);
 
+	/* Add Volume Property Listerners */
 	addPropertyListener(playback_volume, this, &AudioPortDevice_i::playbackVolumeChanged);
 	addPropertyListener(capture_volume, this, &AudioPortDevice_i::captureVolumeChanged);
 
 	start();
 }
 
+/**
+ * Initialize PCM
+ */
 CORBA::ULong AudioPortDevice_i::init_pcm(snd_pcm_t **pcm_handle, const char *card_name, snd_pcm_stream_t stream, unsigned int *sample_rate, snd_pcm_format_t format, int mode){
 
 	int err, dir = 0;
@@ -388,7 +415,6 @@ void AudioPortDevice_i::start() throw (CORBA::SystemException, CF::Resource::Sta
 	AudioPortDevice_base::start();
 
 	pthread_create(&ptt_thread, NULL, &AudioPortDevice_i::ptt_thread_helper, this);
-
 }
 
 void AudioPortDevice_i::stop() throw (CORBA::SystemException, CF::Resource::StopError) {
@@ -423,16 +449,9 @@ void AudioPortDevice_i::releaseObject() throw (CORBA::SystemException, CF::LifeC
 }
 
 
-/**************************************************************************
-
-    This is called automatically after allocateCapacity or deallocateCapacity are called.
-    Your implementation should determine the current state of the device:
-
-       setUsageState(CF::Device::IDLE);   // not in use
-       setUsageState(CF::Device::ACTIVE); // in use, with capacity remaining for allocation
-       setUsageState(CF::Device::BUSY);   // in use, with no capacity remaining for allocation
-
-**************************************************************************/
+/**
+ * This might be useless once there's no allocation properties
+ */
 void AudioPortDevice_i::updateUsageState()
 {
 	pthread_mutex_lock(&tx_lock);
@@ -450,6 +469,9 @@ void AudioPortDevice_i::updateUsageState()
 	pthread_mutex_unlock(&rx_lock);
 }
 
+/**
+ * Thread to be started when PTT button is pushed
+ */
 void AudioPortDevice_i::txThread(){
 
 	CORBA::UShort *buf = (CORBA::UShort *)tx_buffer;
@@ -486,14 +508,6 @@ void AudioPortDevice_i::txThread(){
 		throw CF::Device::InvalidState("Cannot start PCM stream input device!");
 	}
 
-	/* BULKIO TEST BEGIN
-	BULKIO::StreamSRI sri = BULKIO::StreamSRI();
-	sri.xdelta = 1.0/sample_rate;
-	sri.xunits = BULKIO::UNITS_TIME;
-	sri.streamID = "test";
-	test_input->pushSRI(sri);
-	 BULKIO TEST END TODO: remove this*/
-
 	// fill buffer a bit.. after pcm starts
 	usleep(tx_override_timeout*1e3);
 
@@ -507,12 +521,6 @@ void AudioPortDevice_i::txThread(){
 			LOG_ERROR(AudioPortDevice_i, "input buffer cannot be read!");
 			throw CF::Device::InvalidState("input buffer cannot be read!");
 		}
-
-		/* BULKIO TEST BEGIN
-		if(test_input->isActive()){
-			test_input->pushPacket(buf, nframes, bulkio::time::utils::now(), false, "test");
-		}
-		 BULKIO TEST END TODO: remove this*/
 
 		if(audio_sample_stream_uses_port->isActive()){
 			audio_sample_stream_uses_port->pushPacket(
@@ -533,11 +541,6 @@ void AudioPortDevice_i::txThread(){
 		throw CF::Device::InvalidState("input buffer cannot be read!");
 	}
 
-	/* BULKIO TEST BEGIN
-	if(test_input->isActive()){
-		test_input->pushPacket(buf, nframes, bulkio::time::utils::now(), true, "test");
-	}
-	 BULKIO TEST END TODO: remove this*/
 
 	if(audio_sample_stream_uses_port->isActive()){
 		audio_sample_stream_uses_port->pushPacket(
@@ -553,6 +556,9 @@ void AudioPortDevice_i::txThread(){
 	pthread_mutex_unlock(&tx_stream_lock);
 }
 
+/**
+ * writes buffer of samples to pcm card
+ */
 int AudioPortDevice_i::writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, int nframes, unsigned sizeof_frame){
 
 	const unsigned char *buffer = (const unsigned char *) vbuffer;
@@ -587,6 +593,9 @@ int AudioPortDevice_i::writeBuffer(snd_pcm_t *pcm_handle, const void *vbuffer, i
 	return orig_nframes;
 }
 
+/**
+ * reads buffer of samples from pcm card
+ */
 int AudioPortDevice_i::readBuffer(void *vbuffer, int nframes, unsigned sizeof_frame){
 
 	unsigned char *buffer = (unsigned char*) vbuffer;
@@ -634,6 +643,9 @@ int AudioPortDevice_i::readBuffer(void *vbuffer, int nframes, unsigned sizeof_fr
 	return (orig_nframes - nframes);
 }
 
+/**
+ * it listens for key presses and key releases
+ */
 void AudioPortDevice_i::pttThread()
 {
 	struct input_event event;
@@ -773,4 +785,6 @@ void AudioPortDevice_i::playbackVolumeChanged(CORBA::ULong old_value, CORBA::ULo
 
 	snd_mixer_close(handle);
 }
+
+
 

@@ -98,6 +98,8 @@ class Audio_SampleStream_In_i : public POA_Packet::UshortStream, public Port_Pro
         void pushPacket(const Packet::StreamControlType& control, const JTRS::UshortSequence& payload);
         std::string getRepid() const;
 
+        void initPacketConfig(CORBA::ULong sample_rate);
+
     protected:
         AudioPortDevice_i *parent;
         boost::mutex portAccess;
