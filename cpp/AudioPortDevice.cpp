@@ -310,6 +310,10 @@ void AudioPortDevice_i::constructor()
 	}
 	snd_pcm_close(tx_handle);
 
+	/* Add Volume Property Listerners */
+	addPropertyListener(playback_sample_rate, this, &AudioPortDevice_i::playbackSampleRateChanged);
+	addPropertyListener(capture_sample_rate, this, &AudioPortDevice_i::captureSampleRateChanged);
+
 	/* Initialize Volume */
 	playbackVolumeChanged(0,playback_volume);
 	captureVolumeChanged(0,capture_volume);
@@ -786,5 +790,26 @@ void AudioPortDevice_i::playbackVolumeChanged(CORBA::ULong old_value, CORBA::ULo
 	snd_mixer_close(handle);
 }
 
+void AudioPortDevice_i::captureSampleRateChanged(CORBA::ULong old_value, CORBA::ULong new_value){
 
+	capture_sample_rate = new_value;
 
+	if(!(tx_sample_payload_size = AudioPortDevice_i::init_pcm(
+				&tx_handle,
+				input_device_name.c_str(),
+				SND_PCM_STREAM_CAPTURE,
+				&capture_sample_rate,
+				SND_PCM_FORMAT_U16_LE,
+				SND_PCM_NONBLOCK))){
+		throw CF::Device::InvalidState("Cannot initialize input audio device!");
+	}else{
+		tx_override_timeout = ((tx_sample_payload_size*1000)/capture_sample_rate)+5;
+	}
+	snd_pcm_close(tx_handle);
+}
+
+void AudioPortDevice_i::playbackSampleRateChanged(CORBA::ULong old_value, CORBA::ULong new_value){
+
+	playback_sample_rate = new_value;
+	audio_sample_stream_provides_port->initPacketConfig(playback_sample_rate);
+}

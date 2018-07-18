@@ -161,6 +161,9 @@ class AudioPortDevice_i : public AudioPortDevice_base
 
         void captureVolumeChanged(CORBA::ULong old_value, CORBA::ULong new_value);
         void playbackVolumeChanged(CORBA::ULong old_value, CORBA::ULong new_value);
+
+        void captureSampleRateChanged(CORBA::ULong old_value, CORBA::ULong new_value);
+		void playbackSampleRateChanged(CORBA::ULong old_value, CORBA::ULong new_value);
 };
 
 #endif // AUDIOPORTDEVICE_I_IMPL_H
