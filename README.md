@@ -38,3 +38,12 @@ $ amixer scontrols
 $ amixer -Dhw:<card_name> scontrols
 $ amixer -c<card_name> scontrols
 ```
+
+## Copyrights
+
+This work is protected by Copyright. Please refer to the
+[Copyright File](COPYRIGHT) for updated copyright information.
+
+## License
+
+AudioPort Device is licensed under the GNU GENERAL PUBLIC LICENSE (GPL-3.0).
