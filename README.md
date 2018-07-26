@@ -2,7 +2,7 @@
 
 ## Description
 
-This is a REDHAWK project that contains the source and build script for an AudioPort Device that implements JTNC Interfaces. It requires the `alsa` library and the following IDL Projects to be installed:
+This is a REDHAWK project that contains the source and build script for an AudioPort Device that implements JTNC Interfaces. It requires the `libasound` library and the following IDL Projects to be installed:
 
 * JTRS (jtrsInterfaces)
 * Packet (packetInterfaces)
@@ -11,14 +11,34 @@ This is a REDHAWK project that contains the source and build script for an Audio
 
 ## Installation Instructions
 
-To build from source, run the `build.sh` script found at the top level directory. To install to $SDRROOT, run `build.sh install`. 
-Note: root privileges (`sudo`) may be required to install.
+### JTNC interfaces
+
+Refer to the project [jtnc-interfaces](https://github.com/rodrigo455/jtnc-interfaces)
+```
+	$ git clone https://github.com/rodrigo455/jtnc-interfaces.git
+	$ cd jtnc-interfaces
+	$ ./install -m JTRS
+	$ ./install -m Packet
+	$ ./install -m DevMsgCtl
+	$ ./install -m Audio
+```
+
+### ALSA
+
+On CentOs you can get alsa dev package running the command:
+
+```
+	$ sudo yum install alsa-lib-devel
+```
+### AudioPortDevice
+
+You can import this project to your workspace using the REDHAWK Import Wizard, build and install to $SDRROOT within the REDHAWK IDE. Otherwise run the build.sh script found at the top level directory. To install to $SDRROOT, run build.sh install. Note: root privileges (sudo) may be required to install.
 
 ## Properties Notes
 
 - **ptt_device** is the input event device that should represent a keyboard. It has `/dev/input/event2` as its default value. The Left Ctrl key is set to be the PTT Button. You might need to add the user to the input group to be able to access this device:
 ```
-$ usermod -a -G input <userName>
+	$ usermod -a -G input <userName>
 ```
 - **capture_card** is the name of the alsa device set to stream capture audio samples. It has an empty default value that corresponds to the "default" alsa device. You can list the Capture Devices with the command: 
 ```
